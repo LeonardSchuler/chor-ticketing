@@ -1,4 +1,4 @@
-import seatsLayoutUrl from "./SeatsMap.svg";
+import seatsLayoutSvg from "./SeatsMap.svg?raw";
 import seatsMapStyles from "./SeatsMap.css?inline";
 
 class SeatsMap extends HTMLElement {
@@ -14,24 +14,16 @@ class SeatsMap extends HTMLElement {
     this.attachShadow({ mode: "open" });
   }
 
-  async connectedCallback() {
-    console.log("Venue component connected");
-    await this.loadVenueSVG();
-    console.log("SVG loaded:", this.svg);
+  connectedCallback() {
+    this.loadVenueSVG();
     this.render();
     this.attachSeatListeners();
   }
 
-  private async loadVenueSVG() {
-    console.log("Fetching SVG from:", seatsLayoutUrl);
-    const response = await fetch(seatsLayoutUrl);
-    console.log("Response status:", response.status);
-    const svgText = await response.text();
-    console.log("SVG text length:", svgText.length);
+  private loadVenueSVG() {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(svgText, "image/svg+xml");
+    const doc = parser.parseFromString(seatsLayoutSvg, "image/svg+xml");
     this.svg = doc.querySelector("svg");
-    console.log("Parsed SVG:", this.svg);
   }
 
   private attachSeatListeners() {

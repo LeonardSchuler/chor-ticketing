@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Global styles - using Tailwind utilities directly in HTML is preferred */
+body {
+  margin: 20px;
+}
+
+svg {
+  border: 1px solid #ccc;
+  cursor: pointer;
+}

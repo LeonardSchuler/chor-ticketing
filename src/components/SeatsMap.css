@@ -1,0 +1,135 @@
+/* Base seat structure */
+.seat .seat-box,
+.seat-reserved .seat-box,
+.seat-booked .seat-box {
+  stroke: black;
+  stroke-width: 1;
+  width: 30px;
+  height: 30px;
+}
+
+.seat .seat-label,
+.seat-reserved .seat-label,
+.seat-booked .seat-label {
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-size: 10px;
+  font-family: sans-serif;
+}
+
+/* FREE */
+.seat.cat-1 .seat-box {
+  fill: #f9fafb;
+}
+
+.seat.cat-1 .seat-label {
+  fill: #111827;
+}
+
+/* RESERVED */
+.seat-reserved.cat-1 .seat-box {
+  fill: #d1d5db;
+}
+
+.seat-reserved.cat-1 .seat-label {
+  fill: #111827;
+}
+
+/* BOOKED */
+.seat-booked.cat-1 .seat-box {
+  fill: #6b7280;
+}
+
+.seat-booked.cat-1 .seat-label {
+  fill: #ffffff;
+}
+
+/* FREE */
+.seat.cat-2 .seat-box {
+  fill: #fde68a;
+}
+
+.seat.cat-2 .seat-label {
+  fill: #111827;
+}
+
+/* RESERVED */
+.seat-reserved.cat-2 .seat-box {
+  fill: #facc15;
+}
+
+.seat-reserved.cat-2 .seat-label {
+  fill: #111827;
+}
+
+/* BOOKED */
+.seat-booked.cat-2 .seat-box {
+  fill: #ff9100;
+}
+
+.seat-booked.cat-2 .seat-label {
+  fill: #111827;
+}
+
+/* FREE */
+.seat.cat-3 .seat-box {
+  fill: #60a5fa;
+}
+
+.seat.cat-3 .seat-label {
+  fill: #ffffff;
+}
+
+/* RESERVED */
+.seat-reserved.cat-3 .seat-box {
+  fill: #3b82f6;
+}
+
+.seat-reserved.cat-3 .seat-label {
+  fill: #ffffff;
+}
+
+/* BOOKED */
+.seat-booked.cat-3 .seat-box {
+  fill: #1e3a8a;
+}
+
+.seat-booked.cat-3 .seat-label {
+  fill: #ffffff;
+}
+
+/* FREE */
+.seat.cat-4 .seat-box {
+  fill: #6ee7b7;
+}
+
+.seat.cat-4 .seat-label {
+  fill: #064e3b;
+}
+
+/* RESERVED */
+.seat-reserved.cat-4 .seat-box {
+  fill: #10b981;
+}
+
+.seat-reserved.cat-4 .seat-label {
+  fill: #064e3b;
+}
+
+/* BOOKED */
+.seat-booked.cat-4 .seat-box {
+  fill: #065f46;
+}
+
+.seat-booked.cat-4 .seat-label {
+  fill: #ffffff;
+}
+
+/* Hover state */
+.seat:hover .seat-box {
+  fill: #60a5fa !important;
+}
+
+.seat:hover .seat-label {
+  fill: white !important;
+}

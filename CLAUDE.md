@@ -47,19 +47,75 @@ A ticketing application for a choir built with vanilla JavaScript (no frameworks
 ```
 chor-ticketing/
 ├── src/
-│   ├── main.ts              # Application entry point
-│   ├── style.css            # Global styles (Tailwind)
-│   └── components/          # Web Components
-│       ├── SeatsMap.ts      # Seat selection component
-│       ├── SeatsMap.svg     # Venue with all seats
-│       └── SeatsMap.css     # Component-specific styles
-├── public/                  # Static assets
-├── index.html               # Main HTML file
-├── eslint.config.ts         # ESLint configuration
-├── .prettierrc              # Prettier configuration
-├── vite.config.ts           # Vite build configuration
-└── tsconfig.json            # TypeScript configuration
+│   ├── main.ts                   # Application entry point
+│   ├── app.ts                    # App initialization, DI container, global state
+│   ├── style.css                 # Tailwind imports / global styles
+│   ├── components/               # Web Components (UI layer)
+│   │   ├── SeatsMap.ts           # Seat selection component
+│   │   ├── SeatsMap.svg          # Venue with all seats
+│   │   ├── SeatsMap.css          # Component-specific styles
+│   │   ├── CartPanel.ts          # Shopping cart UI component
+│   │   └── CountdownTimer.ts     # Reservation countdown timer
+│   ├── controllers/              # Thin interface adapters
+│   │   ├── SeatsController.ts    # Handles seat selection/display
+│   │   ├── CartController.ts     # Handles cart interactions
+│   │   └── CheckoutController.ts # Handles checkout flow
+│   ├── application/              # Use cases / business orchestration
+│   │   ├── SeatReservationUseCase.ts  # Seat reservation business logic
+│   │   └── BookingUseCase.ts          # Booking completion logic
+│   ├── services/                 # Infrastructure & domain services
+│   │   ├── SeatService.ts        # Backend seat reservation APIs
+│   │   ├── CartService.ts        # In-memory/localStorage cart management
+│   │   └── PaymentService.ts     # Stripe integration
+│   ├── models/                   # TypeScript interfaces and types
+│   │   ├── Seat.ts               # Seat entity and types
+│   │   ├── CartItem.ts           # Cart item types
+│   │   ├── Reservation.ts        # Reservation types
+│   │   └── Booking.ts            # Booking types
+│   └── utils/                    # Generic helpers
+│       ├── date.ts               # Date formatting and manipulation
+│       ├── storage.ts            # LocalStorage wrapper utilities
+│       └── currency.ts           # Currency formatting
+├── public/                       # Static assets
+├── index.html                    # Main HTML file
+├── eslint.config.ts              # ESLint configuration
+├── .prettierrc                   # Prettier configuration
+├── vite.config.ts                # Vite build configuration
+└── tsconfig.json                 # TypeScript configuration
 ```
+
+### Architecture Layers
+
+The project follows a clean architecture approach with clear separation of concerns:
+
+1. **UI Layer (components/)**: Web Components that handle presentation and user interactions
+   - Minimal logic, delegate to controllers
+   - Focus on rendering and DOM manipulation
+
+2. **Controller Layer (controllers/)**: Thin adapters between UI and business logic
+   - Handle user input validation
+   - Coordinate between UI components and use cases
+   - Format data for presentation
+
+3. **Application Layer (application/)**: Business logic and use case orchestration
+   - Coordinate multiple services
+   - Implement business rules and workflows
+   - Independent of UI concerns
+
+4. **Service Layer (services/)**: Infrastructure and domain services
+   - API communication
+   - Data persistence
+   - External integrations (Stripe, etc.)
+
+5. **Domain Layer (models/)**: Core business entities and types
+   - TypeScript interfaces and types
+   - Domain models
+   - No dependencies on other layers
+
+6. **Utilities (utils/)**: Generic helper functions
+   - Pure functions
+   - Reusable across layers
+   - No business logic
 
 ## Development Guidelines
 - Keep it simple with vanilla JavaScript/TypeScript

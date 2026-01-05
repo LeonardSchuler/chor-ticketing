@@ -1,9 +1,11 @@
 # Choir Ticketing App
 
 ## Project Overview
+
 A ticketing application for a choir built with vanilla JavaScript (no frameworks). Users can browse events and book seats for choir performances.
 
 ## Tech Stack
+
 - **Frontend**: Vanilla TypeScript with Web Components
 - **Build Tool**: Vite (rolldown-vite variant)
 - **Styling**: Tailwind CSS v4
@@ -22,6 +24,7 @@ A ticketing application for a choir built with vanilla JavaScript (no frameworks
 ## Core Features
 
 ### User Features
+
 - View available choir events
 - Browse seat availability for each event
 - Select and book seats
@@ -38,12 +41,14 @@ A ticketing application for a choir built with vanilla JavaScript (no frameworks
 - View booking confirmation
 
 ### Event Management
+
 - Display event details (date, time, venue, etc.)
 - Show seat map/layout
 - Track seat availability in real-time
 - Handle seat reservations
 
 ## Project Structure
+
 ```
 chor-ticketing/
 ├── src/
@@ -57,21 +62,18 @@ chor-ticketing/
 │   │   ├── CartPanel.ts          # Shopping cart UI component
 │   │   └── CountdownTimer.ts     # Reservation countdown timer
 │   ├── controllers/              # Thin interface adapters
-│   │   ├── SeatsController.ts    # Handles seat selection/display
-│   │   ├── CartController.ts     # Handles cart interactions
-│   │   └── CheckoutController.ts # Handles checkout flow
+│   │   ├── seats-controller.ts   # Handles seat selection/display
+│   │   ├── cart-controller.ts    # Handles cart interactions
+│   │   └── checkout-controller.ts # Handles checkout flow
 │   ├── application/              # Use cases / business orchestration
-│   │   ├── SeatReservationUseCase.ts  # Seat reservation business logic
-│   │   └── BookingUseCase.ts          # Booking completion logic
+│   │   ├── seat-reservation-usecase.ts  # Seat reservation business logic
+│   │   └── order-booking.-usecase.ts          # Booking completion logic
 │   ├── services/                 # Infrastructure & domain services
-│   │   ├── SeatService.ts        # Backend seat reservation APIs
-│   │   ├── CartService.ts        # In-memory/localStorage cart management
-│   │   └── PaymentService.ts     # Stripe integration
-│   ├── models/                   # TypeScript interfaces and types
-│   │   ├── Seat.ts               # Seat entity and types
-│   │   ├── CartItem.ts           # Cart item types
-│   │   ├── Reservation.ts        # Reservation types
-│   │   └── Booking.ts            # Booking types
+│   │   ├── seat-service.ts        # Backend seat reservation APIs
+│   │   ├── cart-service.ts        # In-memory/localStorage cart management
+│   │   ├── pricing-service.ts        # gets prices per category from api
+│   │   └── payment-service.ts     # Stripe integration
+│   ├── models.ts                   # TypeScript interfaces and types
 │   └── utils/                    # Generic helpers
 │       ├── date.ts               # Date formatting and manipulation
 │       ├── storage.ts            # LocalStorage wrapper utilities
@@ -118,6 +120,7 @@ The project follows a clean architecture approach with clear separation of conce
    - No business logic
 
 ## Development Guidelines
+
 - Keep it simple with vanilla JavaScript/TypeScript
 - No framework dependencies (React, Vue, Angular, etc.)
 - Use Web Components for reusable UI elements
@@ -127,6 +130,7 @@ The project follows a clean architecture approach with clear separation of conce
 - Tailwind CSS for utility-first styling
 
 ## Development Commands
+
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
@@ -137,9 +141,11 @@ npm run format       # Format code with Prettier
 ```
 
 ## Deployment
+
 The application is deployed to AWS with the following serverless architecture:
 
 ### Frontend
+
 - **S3**: Hosts the static frontend files (HTML, CSS, JS)
 - **CloudFront**: CDN distribution with multiple origins:
   - S3 bucket for static frontend assets (HTML, CSS, JS)
@@ -148,6 +154,7 @@ The application is deployed to AWS with the following serverless architecture:
 - Build output from `npm run build` is deployed to S3
 
 ### Backend
+
 - **API Gateway**: RESTful API endpoints for frontend communication
   - Configured as a CloudFront origin for unified domain and caching
   - Integrated with Cognito authorizers for secured endpoints
@@ -174,6 +181,7 @@ The application is deployed to AWS with the following serverless architecture:
 **Decision**: Implement cart functionality using REST API with optimistic locking, NOT WebSockets (initially)
 
 **Rationale**:
+
 - **Phase 1 (Current)**: REST API-based cart implementation
   - Cart state managed in frontend (memory/localStorage)
   - API calls to backend to reserve seats when added to cart
@@ -191,6 +199,7 @@ The application is deployed to AWS with the following serverless architecture:
   - Requires API Gateway WebSocket APIs + additional Lambda handlers
 
 **Implementation Details**:
+
 - Frontend cart operations are immediate and local
 - Backend reserves seats via REST API (POST /reservations)
 - Reservation includes expiration timestamp (10-15 minutes)
@@ -199,12 +208,14 @@ The application is deployed to AWS with the following serverless architecture:
 - Conflict resolution: API returns error if seat already reserved
 
 **When to Migrate to WebSockets**:
+
 - High concurrent user load causing polling overhead
 - User feedback indicates need for real-time updates
 - Cross-tab synchronization becomes a priority
 - Cost analysis shows WebSockets would reduce API calls
 
 ## Future Enhancements
+
 - Payment integration with Stripe
   - Stripe Checkout for secure payment processing
   - Support for one-time payments

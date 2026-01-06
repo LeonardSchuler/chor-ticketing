@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Choir Ticketing App
 
 ## Project Overview
@@ -52,38 +56,48 @@ A ticketing application for a choir built with vanilla JavaScript (no frameworks
 ```
 chor-ticketing/
 ├── src/
-│   ├── main.ts                   # Application entry point
-│   ├── app.ts                    # App initialization, DI container, global state
-│   ├── style.css                 # Tailwind imports / global styles
-│   ├── components/               # Web Components (UI layer)
-│   │   ├── SeatsMap.ts           # Seat selection component
-│   │   ├── SeatsMap.svg          # Venue with all seats
-│   │   ├── SeatsMap.css          # Component-specific styles
-│   │   ├── CartPanel.ts          # Shopping cart UI component
-│   │   └── CountdownTimer.ts     # Reservation countdown timer
-│   ├── controllers/              # Thin interface adapters
-│   │   ├── seats-controller.ts   # Handles seat selection/display
-│   │   ├── cart-controller.ts    # Handles cart interactions
-│   │   └── checkout-controller.ts # Handles checkout flow
-│   ├── application/              # Use cases / business orchestration
-│   │   ├── seat-reservation-usecase.ts  # Seat reservation business logic
-│   │   └── order-booking.-usecase.ts          # Booking completion logic
-│   ├── services/                 # Infrastructure & domain services
-│   │   ├── seat-service.ts        # Backend seat reservation APIs
-│   │   ├── cart-service.ts        # In-memory/localStorage cart management
-│   │   ├── pricing-service.ts        # gets prices per category from api
-│   │   └── payment-service.ts     # Stripe integration
-│   ├── models.ts                   # TypeScript interfaces and types
-│   └── utils/                    # Generic helpers
-│       ├── date.ts               # Date formatting and manipulation
-│       ├── storage.ts            # LocalStorage wrapper utilities
-│       └── currency.ts           # Currency formatting
-├── public/                       # Static assets
-├── index.html                    # Main HTML file
-├── eslint.config.ts              # ESLint configuration
-├── .prettierrc                   # Prettier configuration
-├── vite.config.ts                # Vite build configuration
-└── tsconfig.json                 # TypeScript configuration
+│   ├── main.ts                       # Application entry point
+│   ├── app.ts                        # App initialization, DI container, global state
+│   ├── style.css                     # Tailwind imports / global styles
+│   ├── components/                   # Web Components (UI layer)
+│   │   ├── SeatsMap.ts               # Seat selection component
+│   │   ├── SeatsMap.test.ts          # Tests for SeatsMap component
+│   │   ├── SeatsMap.css              # Component-specific styles
+│   │   ├── CartPanel.ts              # Shopping cart UI component
+│   │   ├── CartPanel.css             # Cart panel styles
+│   │   └── CountdownTimer.ts         # Reservation countdown timer (planned)
+│   ├── controllers/                  # Thin interface adapters
+│   │   ├── seat-controller.ts        # Handles seat selection/display
+│   │   ├── cart-controller.ts        # Handles cart interactions (note: typo in filename)
+│   │   └── checkout-controller.ts    # Handles checkout flow (planned)
+│   ├── application/                  # Use cases / business orchestration
+│   │   ├── SeatReservationUseCase.ts # Seat reservation business logic
+│   │   └── order-booking-usecase.ts  # Booking completion logic (planned)
+│   ├── services/                     # Infrastructure & domain services
+│   │   ├── seat-service.ts           # Backend seat reservation APIs
+│   │   ├── cart-service.ts           # In-memory/localStorage cart management
+│   │   ├── pricing-service.ts        # Gets prices per category from API
+│   │   └── payment-service.ts        # Stripe integration (planned)
+│   ├── infrastructure/               # Infrastructure adapters
+│   │   └── svg-seat-layout-adapter.ts # Parses SVG seat layouts
+│   ├── models/                       # TypeScript interfaces and types (domain entities)
+│   │   ├── seat.ts                   # Seat entity and types
+│   │   ├── cart-item.ts              # Cart item entity
+│   │   ├── booking.ts                # Booking entity
+│   │   └── reservation.ts            # Reservation entity
+│   └── utils/                        # Generic helpers (planned)
+│       ├── date.ts                   # Date formatting and manipulation
+│       ├── storage.ts                # LocalStorage wrapper utilities
+│       └── currency.ts               # Currency formatting
+├── public/                           # Static assets
+│   └── seats-layout.svg              # Venue seat layout SVG
+├── index.html                        # Main HTML file
+├── eslint.config.ts                  # ESLint configuration
+├── .prettierrc                       # Prettier configuration
+├── vite.config.ts                    # Vite build configuration
+├── vitest.config.ts                  # Vitest test configuration
+├── tsconfig.json                     # TypeScript configuration
+└── CLAUDE.md                         # This file
 ```
 
 ### Architecture Layers
@@ -109,15 +123,58 @@ The project follows a clean architecture approach with clear separation of conce
    - Data persistence
    - External integrations (Stripe, etc.)
 
-5. **Domain Layer (models/)**: Core business entities and types
+5. **Domain Layer (models/ and models.ts)**: Core business entities and types
    - TypeScript interfaces and types
    - Domain models
    - No dependencies on other layers
+   - Note: Currently split between `models/` directory (newer entities) and `models.ts` (legacy types)
 
-6. **Utilities (utils/)**: Generic helper functions
+6. **Infrastructure Layer (infrastructure/)**: Technical adapters and implementations
+   - SVG parsing and seat layout loading
+   - External system integrations
+   - Technical concerns separate from business logic
+
+7. **Utilities (utils/)**: Generic helper functions
    - Pure functions
    - Reusable across layers
    - No business logic
+
+## Application Architecture
+
+### Initialization Flow
+
+The application bootstraps through a centralized initialization process in [app.ts](src/app.ts):
+
+1. **Component Registration**: Web Components (SeatsMap, CartPanel) are registered with the browser's Custom Elements registry
+2. **Service Instantiation**: All services are created (SeatService, CartService, PricingService)
+3. **Seat Layout Loading**: SVG seat layout is loaded from `/seats-layout.svg` via `SvgSeatLayoutAdapter`
+4. **Domain Initialization**: Seats are initialized in the domain service with the loaded layout
+5. **Use Case Creation**: Business logic use cases are instantiated with their dependencies
+6. **Controller Creation**: Controllers are created to coordinate between UI and business logic
+7. **Component Mounting**: Web Components are mounted to the DOM
+8. **Event Wiring**: Global event listeners are set up for cross-component communication
+
+### Event-Driven Communication
+
+The application uses browser Custom Events for decoupled component communication:
+
+- **From SeatsMap**: `seat-selected` - When a user clicks a seat
+- **From CartPanel**:
+  - `cart-item-remove` - Remove item from cart
+  - `cart-clear` - Clear entire cart
+  - `cart-purchase` - Initiate purchase flow
+  - `cart-item-discount-update` - Update discount for an item
+- **Global Broadcast**: `cart-updated` - Notifies all components when cart state changes
+
+All events are dispatched on `window` for global accessibility. Components listen to relevant events and update their UI accordingly.
+
+### Dependency Injection
+
+Dependencies are manually wired in [app.ts](src/app.ts) following a simple DI pattern:
+- Services have no dependencies on each other
+- Use Cases depend on Services
+- Controllers depend on Use Cases and Services
+- Components receive their dependencies through the global event system
 
 ## Development Guidelines
 
@@ -128,17 +185,33 @@ The project follows a clean architecture approach with clear separation of conce
 - Responsive design for mobile and desktop
 - Intuitive user experience for booking seats
 - Tailwind CSS for utility-first styling
+- Follow the clean architecture layer separation strictly
+- Use Custom Events for cross-component communication
+- Keep components focused on presentation, delegate logic to controllers
 
 ## Development Commands
 
 ```bash
 npm run dev          # Start development server
-npm run build        # Build for production
+npm run build        # Build for production (runs TypeScript compiler + Vite build)
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix ESLint issues automatically
 npm run format       # Format code with Prettier
+npm run test         # Run tests with Vitest
+npm run test:ui      # Run tests with UI interface
+npm run test:coverage # Run tests with coverage report
 ```
+
+### Testing
+
+The project uses **Vitest** with **jsdom** environment for testing:
+- Test files use the pattern `*.test.ts`
+- Testing Library DOM utilities are available for component testing
+- Globals are enabled (no need to import `describe`, `it`, `expect`)
+- Web Components can be tested using Testing Library's DOM utilities
+
+Example test location: [src/components/SeatsMap.test.ts](src/components/SeatsMap.test.ts)
 
 ## Deployment
 

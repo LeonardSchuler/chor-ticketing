@@ -3,4 +3,8 @@ import "./style.css";
 import { App } from "./app";
 
 const app = new App();
-app.bootstrap(); // All wiring lives in App
+try {
+  await app.bootstrap();
+} catch (error) {
+  console.error("Failed to bootstrap app:", error);
+}

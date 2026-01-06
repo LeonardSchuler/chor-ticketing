@@ -1,0 +1,244 @@
+import type { CartSummary } from "../models/cart-item";
+import "./CartPanel.css";
+
+export class CartPanel extends HTMLElement {
+  private cartSummary: CartSummary = {
+    items: [],
+    subtotal: 0,
+    totalDiscount: 0,
+    total: 0,
+    itemCount: 0,
+  };
+  private timerIntervals: Map<string, number> = new Map();
+
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    this.render();
+    this.setupEventListeners();
+    this.setupGlobalEventListeners();
+  }
+
+  disconnectedCallback() {
+    this.clearAllTimers();
+    this.removeGlobalEventListeners();
+  }
+
+  private setupGlobalEventListeners() {
+    // Listen for cart updates from the app
+    window.addEventListener(
+      "cart-updated",
+      this.handleCartUpdate as EventListener,
+    );
+  }
+
+  private removeGlobalEventListeners() {
+    window.removeEventListener(
+      "cart-updated",
+      this.handleCartUpdate as EventListener,
+    );
+  }
+
+  private handleCartUpdate = (event: CustomEvent) => {
+    const detail = event.detail as { summary: CartSummary };
+    this.cartSummary = detail.summary;
+    this.render();
+  };
+
+  private setupEventListeners() {
+    this.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+
+      // Handle remove button
+      if (target.classList.contains("remove-btn")) {
+        const seatId = target.dataset.seatId;
+        if (seatId) {
+          window.dispatchEvent(
+            new CustomEvent("cart-item-remove", {
+              detail: { seatId },
+            }),
+          );
+        }
+      }
+
+      // Handle clear cart button
+      if (target.classList.contains("clear-btn")) {
+        if (confirm("Möchten Sie den Warenkorb wirklich leeren?")) {
+          window.dispatchEvent(new CustomEvent("cart-clear"));
+        }
+      }
+
+      // Handle purchase button
+      if (target.classList.contains("purchase-btn")) {
+        window.dispatchEvent(new CustomEvent("cart-purchase"));
+      }
+    });
+
+    // Handle discount input changes
+    this.addEventListener("change", (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.classList.contains("discount-input")) {
+        const seatId = target.dataset.seatId;
+        const discount = parseFloat(target.value) || 0;
+        if (seatId) {
+          window.dispatchEvent(
+            new CustomEvent("cart-item-discount-update", {
+              detail: { seatId, discount },
+            }),
+          );
+        }
+      }
+    });
+  }
+
+  private render() {
+    const summary = this.cartSummary;
+
+    this.innerHTML = `
+      <div class="cart-panel">
+        <h2 class="cart-title">Warenkorb</h2>
+
+        ${this.renderCartItems(summary)}
+
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>Zwischensumme:</span>
+            <span>CHF ${summary.subtotal.toFixed(2)}</span>
+          </div>
+          ${
+            summary.totalDiscount > 0
+              ? `
+          <div class="summary-row discount">
+            <span>Rabatt:</span>
+            <span>- CHF ${summary.totalDiscount.toFixed(2)}</span>
+          </div>
+          `
+              : ""
+          }
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span>CHF ${summary.total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="cart-actions">
+          <button class="clear-btn" ${summary.itemCount === 0 ? "disabled" : ""}>
+            Leeren
+          </button>
+          <button class="purchase-btn" ${summary.itemCount === 0 ? "disabled" : ""}>
+            Kaufen
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Setup timers for each item
+    this.setupTimers(summary);
+  }
+
+  private renderCartItems(summary: CartSummary): string {
+    if (summary.itemCount === 0) {
+      return '<div class="empty-cart">Ihr Warenkorb ist leer</div>';
+    }
+
+    return `
+      <div class="cart-items">
+        ${summary.items
+          .map(
+            (item) => `
+          <div class="cart-item" data-seat-id="${item.seat.id}">
+            <div class="item-header">
+              <span class="seat-label">Sitz: ${item.seat.id}</span>
+              <button class="remove-btn" data-seat-id="${item.seat.id}">✕</button>
+            </div>
+
+            <div class="item-details">
+              <div class="item-row">
+                <span class="label">Preis:</span>
+                <span>CHF ${item.price.toFixed(2)}</span>
+              </div>
+
+              <div class="item-row">
+                <label class="label" for="discount-${item.seat.id}">Rabatt (%):</label>
+                <input
+                  type="number"
+                  id="discount-${item.seat.id}"
+                  class="discount-input"
+                  data-seat-id="${item.seat.id}"
+                  value="${item.discount}"
+                  min="0"
+                  max="100"
+                  step="5"
+                />
+              </div>
+
+              ${
+                item.discount > 0
+                  ? `
+              <div class="item-row final-price">
+                <span class="label">Endpreis:</span>
+                <span>CHF ${(item.price * (1 - item.discount / 100)).toFixed(2)}</span>
+              </div>
+              `
+                  : ""
+              }
+            </div>
+
+            <div class="item-timer" data-seat-id="${item.seat.id}">
+              <span class="timer-label">Läuft ab in:</span>
+              <span class="timer-value" id="timer-${item.seat.id}">--:--</span>
+            </div>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  private setupTimers(summary: CartSummary) {
+    this.clearAllTimers();
+
+    summary.items.forEach((item) => {
+      const updateTimer = () => {
+        const now = new Date();
+        const timeLeft = item.expiresAt.getTime() - now.getTime();
+
+        const timerElement = this.querySelector(
+          `#timer-${item.seat.id}`,
+        ) as HTMLElement;
+        if (!timerElement) return;
+
+        if (timeLeft <= 0) {
+          timerElement.textContent = "Abgelaufen";
+          timerElement.classList.add("expired");
+        } else {
+          const minutes = Math.floor(timeLeft / 60000);
+          const seconds = Math.floor((timeLeft % 60000) / 1000);
+          timerElement.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+          // Add warning class when less than 2 minutes remaining
+          if (timeLeft < 120000) {
+            timerElement.classList.add("warning");
+          }
+        }
+      };
+
+      // Update immediately
+      updateTimer();
+
+      // Update every second
+      const intervalId = window.setInterval(updateTimer, 1000);
+      this.timerIntervals.set(item.seat.id, intervalId);
+    });
+  }
+
+  private clearAllTimers() {
+    this.timerIntervals.forEach((intervalId) => clearInterval(intervalId));
+    this.timerIntervals.clear();
+  }
+}
+
+customElements.define("cart-panel", CartPanel);

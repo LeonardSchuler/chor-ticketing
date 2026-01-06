@@ -2,7 +2,8 @@
 
 /* Global styles - using Tailwind utilities directly in HTML is preferred */
 body {
-  margin: 20px;
+  margin: 0;
+  padding: 0;
 }
 
 svg {

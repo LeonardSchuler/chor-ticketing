@@ -51,15 +51,15 @@ export class App {
 
     // Create container layout
     appRoot.innerHTML = `
-      <div class="flex gap-8 p-8 max-w-7xl mx-auto">
-        <div class="flex-1">
-          <h1 class="mb-4 text-2xl font-bold">Sitzplatzauswahl</h1>
-          <div id="seats-container"></div>
-        </div>
-        <div class="w-96">
-          <div id="cart-container"></div>
-        </div>
-      </div>
+<div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 max-w-7xl mx-auto">
+  <div class="flex-1">
+    <h1 class="mb-4 text-2xl font-bold">Sitzplatzauswahl</h1>
+    <div id="seats-container"></div>
+  </div>
+  <div class="w-full lg:w-96">
+    <div id="cart-container"></div>
+  </div>
+</div>
     `;
 
     // Mount SeatsMap

@@ -35,15 +35,12 @@ export class SvgSeatLayoutAdapter {
 
         if (!seatNumber) return;
 
-        // SVGElement.className is SVGAnimatedString with baseVal property
-        // TypeScript struggles with this type, so we explicitly handle it
-        const classNameAnimated = svgElement.className as SVGAnimatedString;
-        const classList: string = classNameAnimated.baseVal;
-
-        // Extract category from class list (e.g., "seat cat-4" -> "cat-4")
-        const categoryMatch: RegExpMatchArray | null =
-          classList.match(/cat-(\d+)/);
-        if (!categoryMatch || categoryMatch.length < 2) return;
+        const categoryClass = Array.from(svgElement.classList).find((cls) =>
+          cls.startsWith("cat-")
+        );
+        if (!categoryClass) return;
+        const categoryMatch = categoryClass.match(/cat-(\d+)/);
+        if (!categoryMatch) return;
 
         const categoryNumber: string = categoryMatch[1];
         const category = `cat-${categoryNumber}` as SeatCategory;
@@ -54,7 +51,7 @@ export class SvgSeatLayoutAdapter {
         });
       });
 
-      console.log(`✅ Loaded ${seatLayouts.length} seats from SVG`);
+      console.log(`Loaded ${seatLayouts.length} seats from SVG`);
       return seatLayouts;
     } catch (error) {
       console.error("Failed to load seats from SVG:", error);

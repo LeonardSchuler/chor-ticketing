@@ -58,14 +58,18 @@ export class SeatsMap extends HTMLElement {
 
   private updateSeatStates(reservedSeatIds: string[]) {
     // Update visual state to reflect what's in the cart
-    const seats = this.shadowRoot?.querySelectorAll(".seat");
+    const seats = this.shadowRoot?.querySelectorAll(".seat, .seat-reserved");
     seats?.forEach((seat) => {
       const seatEl = seat as HTMLElement;
       const seatNumber = seatEl.getAttribute("data-number");
       if (seatNumber && reservedSeatIds.includes(`seat-${seatNumber}`)) {
-        seatEl.classList.add("reserved");
+        // Change class from 'seat' to 'seat-reserved'
+        seatEl.classList.remove("seat");
+        seatEl.classList.add("seat-reserved");
       } else {
-        seatEl.classList.remove("reserved");
+        // Change class from 'seat-reserved' back to 'seat'
+        seatEl.classList.remove("seat-reserved");
+        seatEl.classList.add("seat");
       }
     });
   }
@@ -113,8 +117,8 @@ export class SeatsMap extends HTMLElement {
     const seatNumber = seatGroup.getAttribute("data-number");
     if (!seatNumber) return;
 
-    // Check if seat is already reserved (has 'reserved' class)
-    if (seatGroup.classList.contains("reserved")) {
+    // Check if seat is already reserved (has 'seat-reserved' class)
+    if (seatGroup.classList.contains("seat-reserved")) {
       // If already reserved/in cart, ignore clicks
       return;
     }

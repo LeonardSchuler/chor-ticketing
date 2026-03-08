@@ -3,6 +3,7 @@ import type {
   ReservationRequest,
   ReservationResponse,
 } from "../models/reservation";
+import type { Seat } from "../models/seat";
 
 export class SeatReservationUseCase {
   private seatService: SeatService;
@@ -26,5 +27,13 @@ export class SeatReservationUseCase {
 
   releaseReservation(reservationId: string): boolean {
     return this.seatService.releaseReservation(reservationId);
+  }
+
+  getAllSeats(eventId?: string): Seat[] {
+    return this.seatService.getAllSeats(eventId);
+  }
+
+  getSeat(seatId: string): Seat | undefined {
+    return this.seatService.getSeat(seatId);
   }
 }

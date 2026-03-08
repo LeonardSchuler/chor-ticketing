@@ -1,5 +1,4 @@
 import { SeatReservationUseCase } from "../application/SeatReservationUseCase";
-import { SeatService } from "../services/seat-service";
 import type { Seat } from "../models/seat";
 
 export interface SeatReservedEvent {
@@ -10,15 +9,10 @@ export interface SeatReservedEvent {
 
 export class SeatController extends EventTarget {
   private reservationUseCase: SeatReservationUseCase;
-  private seatService: SeatService;
 
-  constructor(
-    reservationUseCase: SeatReservationUseCase,
-    seatService: SeatService,
-  ) {
+  constructor(reservationUseCase: SeatReservationUseCase) {
     super();
     this.reservationUseCase = reservationUseCase;
-    this.seatService = seatService;
   }
 
   handleSeatSelection(seatNumber: string, eventId: string): void {
@@ -80,10 +74,10 @@ export class SeatController extends EventTarget {
   }
 
   getAllSeats(eventId?: string): Seat[] {
-    return this.seatService.getAllSeats(eventId);
+    return this.reservationUseCase.getAllSeats(eventId);
   }
 
   getSeat(seatId: string): Seat | undefined {
-    return this.seatService.getSeat(seatId);
+    return this.reservationUseCase.getSeat(seatId);
   }
 }

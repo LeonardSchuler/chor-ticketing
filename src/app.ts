@@ -37,7 +37,7 @@ export class App {
     const seatReservationUC = new SeatReservationUseCase(seatService);
 
     // 6. Initialize Controllers
-    const seatController = new SeatController(seatReservationUC, seatService);
+    const seatController = new SeatController(seatReservationUC);
     const cartController = new CartController(
       cartService,
       pricingService,
@@ -49,33 +49,17 @@ export class App {
     const appRoot = document.getElementById("app");
     if (!appRoot) throw new Error("App root not found");
 
-    // Create container layout
     appRoot.innerHTML = `
 <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 max-w-7xl mx-auto">
   <div class="flex-1">
     <h1 class="mb-4 text-2xl font-bold">Sitzplatzauswahl</h1>
-    <div id="seats-container"></div>
+    <seats-map event-id="${eventId}"></seats-map>
   </div>
   <div class="w-full lg:w-96">
-    <div id="cart-container"></div>
+    <cart-panel></cart-panel>
   </div>
 </div>
     `;
-
-    // Mount SeatsMap
-    const seatsContainer = document.getElementById("seats-container");
-    if (seatsContainer) {
-      const seatsMapEl = document.createElement("seats-map") as SeatsMap;
-      seatsMapEl.setAttribute("event-id", eventId);
-      seatsContainer.appendChild(seatsMapEl);
-    }
-
-    // Mount CartPanel
-    const cartContainer = document.getElementById("cart-container");
-    if (cartContainer) {
-      const cartPanelEl = document.createElement("cart-panel") as CartPanel;
-      cartContainer.appendChild(cartPanelEl);
-    }
 
     // 8. Wire up global event listeners
     this.setupEventListeners(seatController, cartController, cartService);

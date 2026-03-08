@@ -5,10 +5,6 @@ export class SeatsMap extends HTMLElement {
   private selectedSeats: Set<string> = new Set();
   private listenersAttached: boolean = false;
 
-  static get observedAttributes() {
-    return ["event-id"];
-  }
-
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -16,22 +12,13 @@ export class SeatsMap extends HTMLElement {
 
   connectedCallback() {
     this.setupGlobalEventListeners();
-    // Note: SVG will be provided via setSvg() method after component is mounted
+    // Note: SVG will be provided via init() method after component is mounted
+    // Seat listeners are set up once the svg of the seats is available
   }
 
   disconnectedCallback() {
     this.removeSeatListeners();
     this.removeGlobalEventListeners();
-  }
-
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-    if (name === "event-id" && oldValue !== newValue) {
-      // Event ID changed, could trigger re-render if needed
-    }
-  }
-
-  private get eventId(): string {
-    return this.getAttribute("event-id") || "event-1";
   }
 
   private setupGlobalEventListeners() {
@@ -73,11 +60,11 @@ export class SeatsMap extends HTMLElement {
   }
 
   /**
-   * Public API: Set the SVG element for the seat map
+   * Public API: Initialize the seat map with SVG layout
    * This should be called by the app after the component is mounted
    * @param svgElement - The SVG element containing the seat layout
    */
-  public setSvg(svgElement: SVGElement) {
+  public init(svgElement: SVGElement) {
     this.svg = svgElement.cloneNode(true) as SVGElement;
     this.render();
   }
@@ -128,7 +115,6 @@ export class SeatsMap extends HTMLElement {
         new CustomEvent("seat-deselected", {
           detail: {
             seatNumber,
-            eventId: this.eventId,
           },
         }),
       );
@@ -142,7 +128,6 @@ export class SeatsMap extends HTMLElement {
         new CustomEvent("seat-selected", {
           detail: {
             seatNumber,
-            eventId: this.eventId,
           },
         }),
       );

@@ -55,7 +55,7 @@ export class App {
 <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 max-w-7xl mx-auto">
   <div class="flex-1">
     <h1 class="mb-4 text-2xl font-bold">Sitzplatzauswahl</h1>
-    <seats-map event-id="${eventId}"></seats-map>
+    <seats-map></seats-map>
   </div>
   <div class="w-full lg:w-96">
     <cart-panel></cart-panel>
@@ -63,14 +63,14 @@ export class App {
 </div>
     `;
 
-    // 7.5. Pass SVG element to SeatsMap component
+    // 7.5. Initialize SeatsMap component with SVG layout
     const seatsMapElement = appRoot.querySelector("seats-map") as SeatsMap;
     if (seatsMapElement) {
-      seatsMapElement.setSvg(svgElement);
+      seatsMapElement.init(svgElement);
     }
 
     // 8. Wire up global event listeners
-    this.setupEventListeners(seatController, cartController);
+    this.setupEventListeners(seatController, cartController, eventId);
 
     // 9. Initial cart update to sync UI
     cartController.syncCartState();
@@ -85,11 +85,12 @@ export class App {
   private setupEventListeners(
     seatController: SeatController,
     cartController: CartController,
+    eventId: string,
   ) {
     // Listen to seat selection events from SeatsMap
     window.addEventListener("seat-selected", ((event: CustomEvent) => {
-      const detail = event.detail as { seatNumber: string; eventId: string };
-      seatController.handleSeatSelection(detail.seatNumber, detail.eventId);
+      const detail = event.detail as { seatNumber: string };
+      seatController.handleSeatSelection(detail.seatNumber, eventId);
     }) as EventListener);
 
     // Listen to cart events from CartPanel

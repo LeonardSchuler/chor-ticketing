@@ -65,11 +65,11 @@ describe("SeatsMap Component", () => {
       seatsMap.init(mockSvg);
 
       let eventFired = false;
-      let eventDetail: any = null;
+      let eventDetail: { seatNumber: string } | null = null;
 
       window.addEventListener("seat-selected", ((event: CustomEvent) => {
         eventFired = true;
-        eventDetail = event.detail;
+        eventDetail = event.detail as { seatNumber: string };
       }) as EventListener);
 
       const shadow = seatsMap.shadowRoot;
@@ -79,7 +79,8 @@ describe("SeatsMap Component", () => {
       firstSeat?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
       expect(eventFired).toBe(true);
-      expect(eventDetail.seatNumber).toBe("1");
+      expect(eventDetail).not.toBeNull();
+      expect(eventDetail!.seatNumber).toBe("1");
     });
   });
 });

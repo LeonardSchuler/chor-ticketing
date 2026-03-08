@@ -170,13 +170,12 @@ describe("EventContextService", () => {
     it("should load event from URL parameter when present", async () => {
       // Set URL parameter
       window.history.replaceState({}, "", "?eventId=event-2");
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(
-        anotherMockEvent,
-      );
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getEventMock.mockResolvedValue(anotherMockEvent);
 
       const event = await service.initializeEvent();
 
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-2");
+      expect(getEventMock).toHaveBeenCalledWith("event-2");
       expect(event).toEqual(anotherMockEvent);
       expect(service.getCurrentEvent()).toEqual(anotherMockEvent);
       expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
@@ -184,33 +183,34 @@ describe("EventContextService", () => {
 
     it("should load event from localStorage when no URL parameter", async () => {
       localStorage.setItem("lastViewedEventId", "event-1");
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getEventMock.mockResolvedValue(mockEvent);
 
       const event = await service.initializeEvent();
 
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
+      expect(getEventMock).toHaveBeenCalledWith("event-1");
       expect(event).toEqual(mockEvent);
       expect(service.getCurrentEvent()).toEqual(mockEvent);
     });
 
     it("should load first available event when no URL parameter or localStorage", async () => {
-      vi.mocked(mockEventApiService.getAllEvents).mockResolvedValue([
-        mockEvent,
-        anotherMockEvent,
-      ]);
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
+      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getAllEventsMock.mockResolvedValue([mockEvent, anotherMockEvent]);
+      getEventMock.mockResolvedValue(mockEvent);
 
       const event = await service.initializeEvent();
 
-      expect(mockEventApiService.getAllEvents).toHaveBeenCalled();
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
+      expect(getAllEventsMock).toHaveBeenCalled();
+      expect(getEventMock).toHaveBeenCalledWith("event-1");
       expect(event).toEqual(mockEvent);
       expect(service.getCurrentEvent()).toEqual(mockEvent);
       expect(localStorage.getItem("lastViewedEventId")).toBe("event-1");
     });
 
     it("should throw error when no events available", async () => {
-      vi.mocked(mockEventApiService.getAllEvents).mockResolvedValue([]);
+      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
+      getAllEventsMock.mockResolvedValue([]);
 
       await expect(service.initializeEvent()).rejects.toThrow(
         "No events available",
@@ -221,10 +221,10 @@ describe("EventContextService", () => {
       const listener = vi.fn();
       window.addEventListener("event-changed", listener);
 
-      vi.mocked(mockEventApiService.getAllEvents).mockResolvedValue([
-        mockEvent,
-      ]);
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
+      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getAllEventsMock.mockResolvedValue([mockEvent]);
+      getEventMock.mockResolvedValue(mockEvent);
 
       await service.initializeEvent();
 
@@ -238,13 +238,12 @@ describe("EventContextService", () => {
 
   describe("loadEvent", () => {
     it("should load specific event by ID", async () => {
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(
-        anotherMockEvent,
-      );
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getEventMock.mockResolvedValue(anotherMockEvent);
 
       const event = await service.loadEvent("event-2");
 
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-2");
+      expect(getEventMock).toHaveBeenCalledWith("event-2");
       expect(event).toEqual(anotherMockEvent);
       expect(service.getCurrentEvent()).toEqual(anotherMockEvent);
       expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
@@ -254,7 +253,8 @@ describe("EventContextService", () => {
       const listener = vi.fn();
       window.addEventListener("event-changed", listener);
 
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
+      const getEventMock = vi.mocked(mockEventApiService.getEvent);
+      getEventMock.mockResolvedValue(mockEvent);
 
       await service.loadEvent("event-1");
 

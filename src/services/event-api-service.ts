@@ -32,7 +32,7 @@ export class EventApiService {
     // Mock data for development
     // Note: apiBaseUrl will be used once real API is implemented
     console.log(`[EventApiService] Mock mode - apiBaseUrl: ${this.apiBaseUrl}`);
-    return this.getMockEvent(eventId);
+    return Promise.resolve(this.getMockEvent(eventId));
   }
 
   /**
@@ -48,11 +48,11 @@ export class EventApiService {
     // return await response.json();
 
     // Mock data for development
-    return [
+    return Promise.resolve([
       this.getMockEvent("event-1"),
       this.getMockEvent("event-2"),
       this.getMockEvent("event-3"),
-    ];
+    ]);
   }
 
   /**

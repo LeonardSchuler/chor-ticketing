@@ -46,6 +46,13 @@ export class SvgSeatLayoutAdapter {
 
         if (!seatNumber) return;
 
+        // Validate seat number format: only allow alphanumeric, hyphens, and underscores
+        // This prevents XSS attacks via malicious seat IDs in the SVG
+        if (!/^[a-zA-Z0-9_-]+$/.test(seatNumber)) {
+          console.warn(`Invalid seat number format, skipping: ${seatNumber}`);
+          return;
+        }
+
         const categoryClass = Array.from(seatElement.classList).find((cls) =>
           cls.startsWith("cat-")
         );

@@ -1,4 +1,5 @@
 import type { CartSummary } from "../models/cart-item";
+import { escapeHtml } from "../utils/html";
 import "./CartPanel.css";
 
 export class CartPanel extends HTMLElement {
@@ -147,11 +148,14 @@ export class CartPanel extends HTMLElement {
       <div class="cart-items">
         ${summary.items
           .map(
-            (item) => `
-          <div class="cart-item" data-seat-id="${item.seat.id}">
+            (item) => {
+              // Escape seat ID once for reuse (defense against XSS)
+              const safeSeatId = escapeHtml(item.seat.id);
+              return `
+          <div class="cart-item" data-seat-id="${safeSeatId}">
             <div class="item-header">
-              <span class="seat-label">Sitz: ${item.seat.id}</span>
-              <button class="remove-btn" data-seat-id="${item.seat.id}">✕</button>
+              <span class="seat-label">Sitz: ${safeSeatId}</span>
+              <button class="remove-btn" data-seat-id="${safeSeatId}">✕</button>
             </div>
 
             <div class="item-details">
@@ -161,12 +165,12 @@ export class CartPanel extends HTMLElement {
               </div>
 
               <div class="item-row">
-                <label class="label" for="discount-${item.seat.id}">Rabatt (%):</label>
+                <label class="label" for="discount-${safeSeatId}">Rabatt (%):</label>
                 <input
                   type="number"
-                  id="discount-${item.seat.id}"
+                  id="discount-${safeSeatId}"
                   class="discount-input"
-                  data-seat-id="${item.seat.id}"
+                  data-seat-id="${safeSeatId}"
                   value="${item.discount}"
                   min="0"
                   max="100"
@@ -186,12 +190,13 @@ export class CartPanel extends HTMLElement {
               }
             </div>
 
-            <div class="item-timer" data-seat-id="${item.seat.id}">
+            <div class="item-timer" data-seat-id="${safeSeatId}">
               <span class="timer-label">Läuft ab in:</span>
-              <span class="timer-value" id="timer-${item.seat.id}">--:--</span>
+              <span class="timer-value" id="timer-${safeSeatId}">--:--</span>
             </div>
           </div>
-        `,
+        `;
+            },
           )
           .join("")}
       </div>
@@ -240,5 +245,3 @@ export class CartPanel extends HTMLElement {
     this.timerIntervals.clear();
   }
 }
-
-customElements.define("cart-panel", CartPanel);

@@ -15,14 +15,13 @@ export class SeatController extends EventTarget {
     this.reservationUseCase = reservationUseCase;
   }
 
-  handleSeatSelection(seatNumber: string, eventId: string): void {
+  handleSeatSelection(seatNumber: string): void {
     // Format seat ID to match storage format (seat-{number})
     const seatId = `seat-${seatNumber}`;
 
     try {
       const response = this.reservationUseCase.execute({
         seatId,
-        eventId,
         durationMinutes: 15,
       });
 

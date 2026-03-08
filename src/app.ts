@@ -5,6 +5,8 @@ import { SeatReservationUseCase } from "./application/SeatReservationUseCase";
 import { SeatService } from "./services/seat-service";
 import { CartService } from "./services/cart-service";
 import { PricingService } from "./services/pricing-service";
+import { EventContextService } from "./services/event-context-service";
+import { EventApiService } from "./services/event-api-service";
 import { SvgSeatLayoutAdapter } from "./infrastructure/svg-seat-layout-adapter";
 import { SeatsMap } from "./components/SeatsMap";
 import { CartPanel } from "./components/CartPanel";
@@ -19,26 +21,36 @@ export class App {
       customElements.define("cart-panel", CartPanel);
     }
 
-    // 2. Initialize Services
-    const seatService = new SeatService();
+    // 2. Initialize Event Context and API Services
+    const eventApiService = new EventApiService();
+    const eventContextService = new EventContextService(eventApiService);
+
+    // 3. Initialize and load the event (handles URL params, localStorage, and defaults)
+    const event = await eventContextService.initializeEvent();
+
+    console.log(`📅 Loaded event: ${event.title}`);
+    console.log(`📍 Venue: ${event.venue}`);
+    console.log(`📆 Date: ${event.date}`);
+
+    // 4. Initialize Services with EventContext
+    const seatService = new SeatService(eventContextService);
     const cartService = new CartService();
     const pricingService = new PricingService();
     pricingService.init(); // Initialize pricing data
 
-    // 3. Load seat layout from SVG using adapter
-    const eventId = "event-1";
+    // 5. Load seat layout from SVG using adapter
     const seatLayoutAdapter = new SvgSeatLayoutAdapter();
     const { seats: seatLayout, svgElement } = await seatLayoutAdapter.load(
-      "/seats-layout.svg",
+      event.seatLayoutUrl,
     );
 
-    // 4. Initialize seats in domain service
-    seatService.initializeSeats(seatLayout, eventId);
+    // 6. Initialize seats in domain service (uses current event from context)
+    seatService.initializeSeats(seatLayout);
 
-    // 5. Initialize Use Cases
+    // 7. Initialize Use Cases
     const seatReservationUC = new SeatReservationUseCase(seatService);
 
-    // 6. Initialize Controllers
+    // 8. Initialize Controllers
     const seatController = new SeatController(seatReservationUC);
     const cartController = new CartController(
       cartService,
@@ -47,7 +59,7 @@ export class App {
       seatReservationUC,
     );
 
-    // 7. Mount Components
+    // 9. Mount Components
     const appRoot = document.getElementById("app");
     if (!appRoot) throw new Error("App root not found");
 
@@ -63,34 +75,33 @@ export class App {
 </div>
     `;
 
-    // 7.5. Initialize SeatsMap component with SVG layout
+    // 10. Initialize SeatsMap component with SVG layout
     const seatsMapElement = appRoot.querySelector("seats-map") as SeatsMap;
     if (seatsMapElement) {
       seatsMapElement.init(svgElement);
     }
 
-    // 8. Wire up global event listeners
-    this.setupEventListeners(seatController, cartController, eventId);
+    // 11. Wire up global event listeners
+    this.setupEventListeners(seatController, cartController);
 
-    // 9. Initial cart update to sync UI
+    // 12. Initial cart update to sync UI
     cartController.syncCartState();
 
     console.log("✅ App initialized successfully");
-    console.log(`📍 Event ID: ${eventId}`);
+    console.log(`📍 Event: ${event.title} (${event.id})`);
     console.log(
-      `🪑 Seats available: ${seatService.getAllSeats(eventId).length}`,
+      `🪑 Seats available: ${seatService.getAllSeats().length}`,
     );
   }
 
   private setupEventListeners(
     seatController: SeatController,
     cartController: CartController,
-    eventId: string,
   ) {
     // Listen to seat selection events from SeatsMap
     window.addEventListener("seat-selected", ((event: CustomEvent) => {
       const detail = event.detail as { seatNumber: string };
-      seatController.handleSeatSelection(detail.seatNumber, eventId);
+      seatController.handleSeatSelection(detail.seatNumber);
     }) as EventListener);
 
     // Listen to cart events from CartPanel

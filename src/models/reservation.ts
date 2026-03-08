@@ -10,7 +10,7 @@ export interface Reservation {
 
 export interface ReservationRequest {
   seatId: string;
-  eventId: string;
+  eventId?: string; // Optional - uses current event from EventContextService if not provided
   durationMinutes?: number; // defaults to 15 minutes
 }
 

@@ -40,6 +40,9 @@ export class CartController {
 
     // Add to cart
     this.cartService.addItem(seat, price, reservationId, expiresAt);
+
+    // Broadcast cart update
+    this.broadcastCartUpdate();
   }
 
   handleRemoveItem(seatId: string): void {
@@ -49,11 +52,16 @@ export class CartController {
       // Release the reservation
       this.reservationUseCase.releaseReservation(item.reservationId);
     }
+
+    // Broadcast cart update
+    this.broadcastCartUpdate();
   }
 
   handleUpdateDiscount(seatId: string, discountPercent: number): void {
     try {
       this.cartService.updateDiscount(seatId, discountPercent);
+      // Broadcast cart update
+      this.broadcastCartUpdate();
     } catch (error) {
       console.error("Error updating discount:", error);
     }
@@ -66,6 +74,9 @@ export class CartController {
     items.forEach((item) => {
       this.reservationUseCase.releaseReservation(item.reservationId);
     });
+
+    // Broadcast cart update
+    this.broadcastCartUpdate();
   }
 
   handlePurchase(): void {
@@ -86,5 +97,28 @@ export class CartController {
     );
 
     this.cartService.clear();
+
+    // Broadcast cart update
+    this.broadcastCartUpdate();
+  }
+
+  syncCartState(): void {
+    // Public method for initial cart state sync
+    this.broadcastCartUpdate();
+  }
+
+  private broadcastCartUpdate(): void {
+    const summary = this.cartService.getSummary();
+    const reservedSeatIds = summary.items.map((item) => item.seat.id);
+
+    // Notify all components about cart update
+    window.dispatchEvent(
+      new CustomEvent("cart-updated", {
+        detail: {
+          summary,
+          reservedSeatIds,
+        },
+      }),
+    );
   }
 }

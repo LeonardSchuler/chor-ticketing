@@ -62,10 +62,10 @@ export class App {
     `;
 
     // 8. Wire up global event listeners
-    this.setupEventListeners(seatController, cartController, cartService);
+    this.setupEventListeners(seatController, cartController);
 
     // 9. Initial cart update to sync UI
-    this.broadcastCartUpdate(cartService);
+    cartController.syncCartState();
 
     console.log("✅ App initialized successfully");
     console.log(`📍 Event ID: ${eventId}`);
@@ -77,7 +77,6 @@ export class App {
   private setupEventListeners(
     seatController: SeatController,
     cartController: CartController,
-    cartService: CartService,
   ) {
     // Listen to seat selection events from SeatsMap
     window.addEventListener("seat-selected", ((event: CustomEvent) => {
@@ -105,25 +104,5 @@ export class App {
       const detail = event.detail as { seatId: string; discount: number };
       cartController.handleUpdateDiscount(detail.seatId, detail.discount);
     }) as EventListener);
-
-    // Subscribe to cart changes and broadcast to all components
-    cartService.subscribe(() => {
-      this.broadcastCartUpdate(cartService);
-    });
-  }
-
-  private broadcastCartUpdate(cartService: CartService) {
-    const summary = cartService.getSummary();
-    const reservedSeatIds = summary.items.map((item) => item.seat.id);
-
-    // Notify all components about cart update
-    window.dispatchEvent(
-      new CustomEvent("cart-updated", {
-        detail: {
-          summary,
-          reservedSeatIds,
-        },
-      }),
-    );
   }
 }

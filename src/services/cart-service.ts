@@ -1,11 +1,8 @@
 import type { CartItem, CartSummary } from "../models/cart-item";
 import type { Seat } from "../models/seat";
 
-export type CartChangeListener = (summary: CartSummary) => void;
-
 export class CartService {
   private items: Map<string, CartItem> = new Map();
-  private listeners: Set<CartChangeListener> = new Set();
   private expirationTimers: Map<string, number> = new Map();
 
   addItem(
@@ -25,7 +22,6 @@ export class CartService {
 
     this.items.set(seat.id, item);
     this.setupExpirationTimer(seat.id, expiresAt);
-    this.notifyListeners();
   }
 
   removeItem(seatId: string): CartItem | undefined {
@@ -33,7 +29,6 @@ export class CartService {
     if (item) {
       this.items.delete(seatId);
       this.clearExpirationTimer(seatId);
-      this.notifyListeners();
     }
     return item;
   }
@@ -56,7 +51,6 @@ export class CartService {
 
     item.discount = discountPercent;
     this.items.set(seatId, item);
-    this.notifyListeners();
     return true;
   }
 
@@ -64,7 +58,6 @@ export class CartService {
     const items = this.getAllItems();
     this.items.clear();
     this.clearAllTimers();
-    this.notifyListeners();
     return items;
   }
 
@@ -86,19 +79,6 @@ export class CartService {
       total,
       itemCount: items.length,
     };
-  }
-
-  subscribe(listener: CartChangeListener): () => void {
-    this.listeners.add(listener);
-    // Return unsubscribe function
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
-
-  private notifyListeners(): void {
-    const summary = this.getSummary();
-    this.listeners.forEach((listener) => listener(summary));
   }
 
   private setupExpirationTimer(seatId: string, expiresAt: Date): void {

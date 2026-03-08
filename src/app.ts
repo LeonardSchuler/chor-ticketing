@@ -28,7 +28,9 @@ export class App {
     // 3. Load seat layout from SVG using adapter
     const eventId = "event-1";
     const seatLayoutAdapter = new SvgSeatLayoutAdapter();
-    const seatLayout = await seatLayoutAdapter.load("/seats-layout.svg");
+    const { seats: seatLayout, svgElement } = await seatLayoutAdapter.load(
+      "/seats-layout.svg",
+    );
 
     // 4. Initialize seats in domain service
     seatService.initializeSeats(seatLayout, eventId);
@@ -60,6 +62,12 @@ export class App {
   </div>
 </div>
     `;
+
+    // 7.5. Pass SVG element to SeatsMap component
+    const seatsMapElement = appRoot.querySelector("seats-map") as SeatsMap;
+    if (seatsMapElement) {
+      seatsMapElement.setSvg(svgElement);
+    }
 
     // 8. Wire up global event listeners
     this.setupEventListeners(seatController, cartController);

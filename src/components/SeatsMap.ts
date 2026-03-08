@@ -4,7 +4,6 @@ export class SeatsMap extends HTMLElement {
   private svg: SVGElement | null = null;
   private selectedSeats: Set<string> = new Set();
   private listenersAttached: boolean = false;
-  private svgPath: string = "/seats-layout.svg"; // Path to SVG in public folder
 
   static get observedAttributes() {
     return ["event-id"];
@@ -15,10 +14,9 @@ export class SeatsMap extends HTMLElement {
     this.attachShadow({ mode: "open" });
   }
 
-  async connectedCallback() {
-    await this.loadVenueSVG();
-    this.render();
+  connectedCallback() {
     this.setupGlobalEventListeners();
+    // Note: SVG will be provided via setSvg() method after component is mounted
   }
 
   disconnectedCallback() {
@@ -74,17 +72,14 @@ export class SeatsMap extends HTMLElement {
     });
   }
 
-  private async loadVenueSVG() {
-    try {
-      const response = await fetch(this.svgPath);
-      const svgText = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svgText, "image/svg+xml");
-      this.svg = doc.querySelector("svg");
-    } catch (error) {
-      console.error("Failed to load venue SVG:", error);
-      throw error;
-    }
+  /**
+   * Public API: Set the SVG element for the seat map
+   * This should be called by the app after the component is mounted
+   * @param svgElement - The SVG element containing the seat layout
+   */
+  public setSvg(svgElement: SVGElement) {
+    this.svg = svgElement.cloneNode(true) as SVGElement;
+    this.render();
   }
 
   private attachSeatListeners() {

@@ -96,7 +96,7 @@ export class SeatsMap extends HTMLElement {
       const seatEl = seat as HTMLElement; // cast for TS
 
       // Click listener
-      seatEl.addEventListener("click", this.seatClickHandler);
+      seatEl.addEventListener("click", this.handleSeatClicked);
     });
   }
 
@@ -104,15 +104,13 @@ export class SeatsMap extends HTMLElement {
     // Remove all seat listeners
     const seats = this.shadowRoot?.querySelectorAll(".seat");
     seats?.forEach((seat) =>
-      seat.removeEventListener("click", this.seatClickHandler),
+      seat.removeEventListener("click", this.handleSeatClicked),
     );
 
     // Optional: reset the flag
     this.listenersAttached = false;
   }
-  private seatClickHandler = (e: Event) => this.handleSeatClick(e);
-
-  private handleSeatClick(e: Event) {
+  private handleSeatClicked = (e: Event) => {
     const seatGroup = e.currentTarget as SVGElement;
     const seatNumber = seatGroup.getAttribute("data-number");
     if (!seatNumber) return;

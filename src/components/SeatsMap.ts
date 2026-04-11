@@ -22,10 +22,13 @@ export class SeatsMap extends HTMLElement {
   }
 
   private setupGlobalEventListeners() {
-    // Listen for cart updates from the app
     window.addEventListener(
       "cart-updated",
       this.handleCartUpdate as EventListener,
+    );
+    window.addEventListener(
+      "purchase-completed",
+      this.handlePurchaseCompleted as EventListener,
     );
   }
 
@@ -34,6 +37,10 @@ export class SeatsMap extends HTMLElement {
       "cart-updated",
       this.handleCartUpdate as EventListener,
     );
+    window.removeEventListener(
+      "purchase-completed",
+      this.handlePurchaseCompleted as EventListener,
+    );
   }
 
   private handleCartUpdate = (event: CustomEvent) => {
@@ -41,18 +48,29 @@ export class SeatsMap extends HTMLElement {
     this.updateSeatStates(detail.reservedSeatIds);
   };
 
+  private handlePurchaseCompleted = (event: CustomEvent) => {
+    const { purchasedSeatIds } = event.detail as { purchasedSeatIds: string[] };
+    const seats = this.shadowRoot?.querySelectorAll(".seat-reserved");
+    seats?.forEach((seat) => {
+      const seatEl = seat as HTMLElement;
+      const seatNumber = seatEl.getAttribute("data-number");
+      if (seatNumber && purchasedSeatIds.includes(`seat-${seatNumber}`)) {
+        seatEl.classList.remove("seat-reserved");
+        seatEl.classList.add("seat-booked");
+      }
+    });
+  };
+
   private updateSeatStates(reservedSeatIds: string[]) {
-    // Update visual state to reflect what's in the cart
+    // seat-booked seats are intentionally excluded from this query
     const seats = this.shadowRoot?.querySelectorAll(".seat, .seat-reserved");
     seats?.forEach((seat) => {
       const seatEl = seat as HTMLElement;
       const seatNumber = seatEl.getAttribute("data-number");
       if (seatNumber && reservedSeatIds.includes(`seat-${seatNumber}`)) {
-        // Change class from 'seat' to 'seat-reserved'
         seatEl.classList.remove("seat");
         seatEl.classList.add("seat-reserved");
       } else {
-        // Change class from 'seat-reserved' back to 'seat'
         seatEl.classList.remove("seat-reserved");
         seatEl.classList.add("seat");
       }
@@ -99,9 +117,10 @@ export class SeatsMap extends HTMLElement {
     const seatNumber = seatGroup.getAttribute("data-number");
     if (!seatNumber) return;
 
-    // Check if seat is already reserved (has 'seat-reserved' class)
-    if (seatGroup.classList.contains("seat-reserved")) {
-      // If already reserved/in cart, ignore clicks
+    if (
+      seatGroup.classList.contains("seat-reserved") ||
+      seatGroup.classList.contains("seat-booked")
+    ) {
       return;
     }
 

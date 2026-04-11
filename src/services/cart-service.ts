@@ -3,7 +3,6 @@ import type { Seat } from "../models/seat";
 
 export class CartService {
   private items: Map<string, CartItem> = new Map();
-  private expirationTimers: Map<string, number> = new Map();
 
   addItem(
     seat: Seat,
@@ -21,14 +20,12 @@ export class CartService {
     };
 
     this.items.set(seat.id, item);
-    this.setupExpirationTimer(seat.id, expiresAt);
   }
 
   removeItem(seatId: string): CartItem | undefined {
     const item = this.items.get(seatId);
     if (item) {
       this.items.delete(seatId);
-      this.clearExpirationTimer(seatId);
     }
     return item;
   }
@@ -57,7 +54,6 @@ export class CartService {
   clear(): CartItem[] {
     const items = this.getAllItems();
     this.items.clear();
-    this.clearAllTimers();
     return items;
   }
 
@@ -79,32 +75,6 @@ export class CartService {
       total,
       itemCount: items.length,
     };
-  }
-
-  private setupExpirationTimer(seatId: string, expiresAt: Date): void {
-    const now = new Date();
-    const timeUntilExpiration = expiresAt.getTime() - now.getTime();
-
-    if (timeUntilExpiration > 0) {
-      const timerId = window.setTimeout(() => {
-        this.removeItem(seatId);
-      }, timeUntilExpiration);
-
-      this.expirationTimers.set(seatId, timerId);
-    }
-  }
-
-  private clearExpirationTimer(seatId: string): void {
-    const timerId = this.expirationTimers.get(seatId);
-    if (timerId) {
-      clearTimeout(timerId);
-      this.expirationTimers.delete(seatId);
-    }
-  }
-
-  private clearAllTimers(): void {
-    this.expirationTimers.forEach((timerId) => clearTimeout(timerId));
-    this.expirationTimers.clear();
   }
 
   isEmpty(): boolean {

@@ -19,7 +19,8 @@
 
 /* FREE */
 .seat.cat-1 .seat-box {
-  fill: #f9fafb;
+  fill: #ffffff;
+  stroke: #9ca3af;
 }
 
 .seat.cat-1 .seat-label {
@@ -28,11 +29,12 @@
 
 /* RESERVED */
 .seat-reserved.cat-1 .seat-box {
-  fill: #d1d5db;
+  fill: #9ca3af;
+  stroke: #6b7280;
 }
 
 .seat-reserved.cat-1 .seat-label {
-  fill: #111827;
+  fill: #1f2937;
 }
 
 /* BOOKED */
@@ -127,7 +129,7 @@
 
 /* Hover state */
 .seat:hover .seat-box {
-  fill: #60a5fa !important;
+  fill: #2563eb !important;
 }
 
 .seat:hover .seat-label {

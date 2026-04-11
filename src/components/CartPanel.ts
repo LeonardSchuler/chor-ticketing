@@ -10,7 +10,7 @@ export class CartPanel extends HTMLElement {
     total: 0,
     itemCount: 0,
   };
-  private timerIntervals: Map<string, number> = new Map();
+  private timerInterval: number | undefined;
 
   constructor() {
     super();
@@ -23,7 +23,7 @@ export class CartPanel extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.clearAllTimers();
+    clearInterval(this.timerInterval);
     this.removeGlobalEventListeners();
   }
 
@@ -204,18 +204,19 @@ export class CartPanel extends HTMLElement {
   }
 
   private setupTimers(summary: CartSummary) {
-    this.clearAllTimers();
+    clearInterval(this.timerInterval);
 
-    summary.items.forEach((item) => {
-      const updateTimer = () => {
-        const now = new Date();
-        const timeLeft = item.expiresAt.getTime() - now.getTime();
+    if (summary.items.length === 0) return;
 
+    const updateAllTimers = () => {
+      const now = Date.now();
+      summary.items.forEach((item) => {
         const timerElement = this.querySelector(
           `#timer-${item.seat.id}`,
         ) as HTMLElement;
         if (!timerElement) return;
 
+        const timeLeft = item.expiresAt.getTime() - now;
         if (timeLeft <= 0) {
           timerElement.textContent = "Abgelaufen";
           timerElement.classList.add("expired");
@@ -223,25 +224,14 @@ export class CartPanel extends HTMLElement {
           const minutes = Math.floor(timeLeft / 60000);
           const seconds = Math.floor((timeLeft % 60000) / 1000);
           timerElement.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
-          // Add warning class when less than 2 minutes remaining
           if (timeLeft < 120000) {
             timerElement.classList.add("warning");
           }
         }
-      };
+      });
+    };
 
-      // Update immediately
-      updateTimer();
-
-      // Update every second
-      const intervalId = window.setInterval(updateTimer, 1000);
-      this.timerIntervals.set(item.seat.id, intervalId);
-    });
-  }
-
-  private clearAllTimers() {
-    this.timerIntervals.forEach((intervalId) => clearInterval(intervalId));
-    this.timerIntervals.clear();
+    updateAllTimers();
+    this.timerInterval = window.setInterval(updateAllTimers, 1000);
   }
 }

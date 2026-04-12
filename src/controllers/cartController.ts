@@ -1,6 +1,6 @@
 import { CartService } from '../services/cartService';
 import { SeatReservationUseCase } from '../application/seatReservationUseCase';
-import { OrderBookingUseCase } from '../application/orderBookingUsecase';
+import { OrderBookingUseCase } from '../application/orderBookingUseCase';
 import type { SeatReservedEvent } from './seatController';
 
 export class CartController {

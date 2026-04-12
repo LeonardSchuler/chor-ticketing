@@ -2,7 +2,8 @@
 import { SeatController } from './controllers/seatController';
 import { CartController } from './controllers/cartController';
 import { SeatReservationUseCase } from './application/seatReservationUseCase';
-import { OrderBookingUseCase } from './application/orderBookingUsecase';
+import { OrderBookingUseCase } from './application/orderBookingUseCase';
+import { EventSelectionUseCase } from './application/eventSelectionUseCase';
 import { SeatService } from './services/seatService';
 import { CartService } from './services/cartService';
 import { PricingService } from './services/pricingService';
@@ -22,12 +23,13 @@ export class App {
       customElements.define('cart-panel', CartPanel);
     }
 
-    // 2. Initialize Event Context and API Services
+    // 2. Initialize services and use cases
     const eventApiService = new EventApiService();
-    const eventContextService = new EventContextService(eventApiService);
+    const eventContextService = new EventContextService();
+    const eventSelectionUseCase = new EventSelectionUseCase(eventApiService, eventContextService);
 
     // 3. Initialize and load the event (handles URL params, localStorage, and defaults)
-    const event = await eventContextService.initializeEvent();
+    const event = await eventSelectionUseCase.initializeEvent();
 
     console.log(`📅 Loaded event: ${event.title}`);
     console.log(`📍 Venue: ${event.venue}`);

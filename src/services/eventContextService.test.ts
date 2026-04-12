@@ -1,23 +1,15 @@
 // src/services/event-context-service.test.ts
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { EventContextService } from "./eventContextService";
-import { EventApiService } from "./eventApiService";
 import type { Event, EventChangedDetail } from "../models/event";
 
 describe("EventContextService", () => {
   let service: EventContextService;
-  let mockEventApiService: EventApiService;
   let mockEvent: Event;
   let anotherMockEvent: Event;
 
   beforeEach(() => {
-    // Create mock EventApiService
-    mockEventApiService = {
-      getEvent: vi.fn(),
-      getAllEvents: vi.fn(),
-    } as unknown as EventApiService;
-
-    service = new EventContextService(mockEventApiService);
+    service = new EventContextService();
 
     mockEvent = {
       id: "event-1",
@@ -39,9 +31,6 @@ describe("EventContextService", () => {
   });
 
   afterEach(() => {
-    // Clean up localStorage after each test
-    localStorage.clear();
-    // Clean up URL search params
     window.history.replaceState({}, "", window.location.pathname);
   });
 
@@ -161,106 +150,6 @@ describe("EventContextService", () => {
       service.clearCurrentEvent();
 
       expect(listener).not.toHaveBeenCalled();
-
-      window.removeEventListener("event-changed", listener);
-    });
-  });
-
-  describe("initializeEvent", () => {
-    it("should load event from URL parameter when present", async () => {
-      // Set URL parameter
-      window.history.replaceState({}, "", "?eventId=event-2");
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getEventMock.mockResolvedValue(anotherMockEvent);
-
-      const event = await service.initializeEvent();
-
-      expect(getEventMock).toHaveBeenCalledWith("event-2");
-      expect(event).toEqual(anotherMockEvent);
-      expect(service.getCurrentEvent()).toEqual(anotherMockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
-    });
-
-    it("should load event from localStorage when no URL parameter", async () => {
-      localStorage.setItem("lastViewedEventId", "event-1");
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getEventMock.mockResolvedValue(mockEvent);
-
-      const event = await service.initializeEvent();
-
-      expect(getEventMock).toHaveBeenCalledWith("event-1");
-      expect(event).toEqual(mockEvent);
-      expect(service.getCurrentEvent()).toEqual(mockEvent);
-    });
-
-    it("should load first available event when no URL parameter or localStorage", async () => {
-      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getAllEventsMock.mockResolvedValue([mockEvent, anotherMockEvent]);
-      getEventMock.mockResolvedValue(mockEvent);
-
-      const event = await service.initializeEvent();
-
-      expect(getAllEventsMock).toHaveBeenCalled();
-      expect(getEventMock).toHaveBeenCalledWith("event-1");
-      expect(event).toEqual(mockEvent);
-      expect(service.getCurrentEvent()).toEqual(mockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-1");
-    });
-
-    it("should throw error when no events available", async () => {
-      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
-      getAllEventsMock.mockResolvedValue([]);
-
-      await expect(service.initializeEvent()).rejects.toThrow(
-        "No events available",
-      );
-    });
-
-    it("should dispatch event-changed event when initializing", async () => {
-      const listener = vi.fn();
-      window.addEventListener("event-changed", listener);
-
-      const getAllEventsMock = vi.mocked(mockEventApiService.getAllEvents);
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getAllEventsMock.mockResolvedValue([mockEvent]);
-      getEventMock.mockResolvedValue(mockEvent);
-
-      await service.initializeEvent();
-
-      expect(listener).toHaveBeenCalledTimes(1);
-      const event = listener.mock.calls[0][0] as CustomEvent<EventChangedDetail>;
-      expect(event.detail.eventId).toBe("event-1");
-
-      window.removeEventListener("event-changed", listener);
-    });
-  });
-
-  describe("loadEvent", () => {
-    it("should load specific event by ID", async () => {
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getEventMock.mockResolvedValue(anotherMockEvent);
-
-      const event = await service.loadEvent("event-2");
-
-      expect(getEventMock).toHaveBeenCalledWith("event-2");
-      expect(event).toEqual(anotherMockEvent);
-      expect(service.getCurrentEvent()).toEqual(anotherMockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
-    });
-
-    it("should dispatch event-changed when loading", async () => {
-      const listener = vi.fn();
-      window.addEventListener("event-changed", listener);
-
-      const getEventMock = vi.mocked(mockEventApiService.getEvent);
-      getEventMock.mockResolvedValue(mockEvent);
-
-      await service.loadEvent("event-1");
-
-      expect(listener).toHaveBeenCalledTimes(1);
-      const event = listener.mock.calls[0][0] as CustomEvent<EventChangedDetail>;
-      expect(event.detail.eventId).toBe("event-1");
 
       window.removeEventListener("event-changed", listener);
     });

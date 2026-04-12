@@ -1,4 +1,4 @@
-import type { CartSummary } from "../models/cart-item";
+import type { CartSummary } from "../models/cartItem";
 import { escapeHtml } from "../utils/html";
 import "./CartPanel.css";
 

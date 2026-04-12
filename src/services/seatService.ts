@@ -5,8 +5,8 @@ import type {
   ReservationRequest,
   ReservationResponse,
 } from "../models/reservation";
-import type { SeatLayout } from "../infrastructure/svg-seat-layout-adapter";
-import type { EventContextService } from "./event-context-service";
+import type { SeatLayout } from "../infrastructure/svgSeatLayoutAdapter";
+import type { EventContextService } from "./eventContextService";
 
 export class SeatService {
   private seats: Map<string, Seat> = new Map();

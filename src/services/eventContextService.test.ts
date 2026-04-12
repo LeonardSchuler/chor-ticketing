@@ -1,7 +1,7 @@
 // src/services/event-context-service.test.ts
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { EventContextService } from "./event-context-service";
-import { EventApiService } from "./event-api-service";
+import { EventContextService } from "./eventContextService";
+import { EventApiService } from "./eventApiService";
 import type { Event, EventChangedDetail } from "../models/event";
 
 describe("EventContextService", () => {

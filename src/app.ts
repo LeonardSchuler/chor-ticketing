@@ -1,13 +1,14 @@
 // src/app.ts
-import { SeatController } from "./controllers/seat-controller";
-import { CartController } from "./controllers/cart-controller";
+import { SeatController } from "./controllers/seatController";
+import { CartController } from "./controllers/cartController";
 import { SeatReservationUseCase } from "./application/SeatReservationUseCase";
-import { SeatService } from "./services/seat-service";
-import { CartService } from "./services/cart-service";
-import { PricingService } from "./services/pricing-service";
-import { EventContextService } from "./services/event-context-service";
-import { EventApiService } from "./services/event-api-service";
-import { SvgSeatLayoutAdapter } from "./infrastructure/svg-seat-layout-adapter";
+import { OrderBookingUseCase } from "./application/orderBookingUsecase";
+import { SeatService } from "./services/seatService";
+import { CartService } from "./services/cartService";
+import { PricingService } from "./services/pricingService";
+import { EventContextService } from "./services/eventContextService";
+import { EventApiService } from "./services/eventApiService";
+import { SvgSeatLayoutAdapter } from "./infrastructure/svgSeatLayoutAdapter";
 import { SeatsMap } from "./components/SeatsMap";
 import { CartPanel } from "./components/CartPanel";
 
@@ -48,15 +49,15 @@ export class App {
     seatService.initializeSeats(seatLayout);
 
     // 7. Initialize Use Cases
-    const seatReservationUC = new SeatReservationUseCase(seatService);
+    const seatReservationUC = new SeatReservationUseCase(seatService, cartService, pricingService);
+    const orderBookingUC = new OrderBookingUseCase(cartService);
 
     // 8. Initialize Controllers
     const seatController = new SeatController(seatReservationUC);
     const cartController = new CartController(
       cartService,
-      pricingService,
-      seatController,
       seatReservationUC,
+      orderBookingUC,
     );
 
     // 9. Mount Components

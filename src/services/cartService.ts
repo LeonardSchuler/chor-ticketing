@@ -1,4 +1,4 @@
-import type { CartItem, CartSummary } from "../models/cart-item";
+import type { CartItem, CartSummary } from "../models/cartItem";
 import type { Seat } from "../models/seat";
 
 export class CartService {

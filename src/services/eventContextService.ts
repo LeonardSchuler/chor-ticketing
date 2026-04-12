@@ -1,6 +1,6 @@
 // src/services/event-context-service.ts
 import type { Event, EventChangedDetail } from "../models/event";
-import type { EventApiService } from "./event-api-service";
+import type { EventApiService } from "./eventApiService";
 
 /**
  * Service for managing the current event context.

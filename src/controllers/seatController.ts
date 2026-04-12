@@ -1,5 +1,5 @@
-import { SeatReservationUseCase } from "../application/SeatReservationUseCase";
-import type { Seat } from "../models/seat";
+import { SeatReservationUseCase } from '../application/seatReservationUseCase';
+import type { Seat } from '../models/seat';
 
 export interface SeatReservedEvent {
   seat: Seat;
@@ -21,22 +21,22 @@ export class SeatController {
 
     if (result.success && result.seat && result.reservationId && result.expiresAt) {
       window.dispatchEvent(
-        new CustomEvent<SeatReservedEvent>("seat-reserved", {
+        new CustomEvent<SeatReservedEvent>('seat-reserved', {
           detail: {
             seat: result.seat,
             reservationId: result.reservationId,
             expiresAt: result.expiresAt,
           },
-        }),
+        })
       );
     } else {
       window.dispatchEvent(
-        new CustomEvent("seat-reservation-failed", {
+        new CustomEvent('seat-reservation-failed', {
           detail: {
             seatId,
-            error: result.error || "Unknown error",
+            error: result.error || 'Unknown error',
           },
-        }),
+        })
       );
     }
   }

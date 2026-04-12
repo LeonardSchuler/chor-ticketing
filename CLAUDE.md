@@ -67,28 +67,32 @@ chor-ticketing/
 │   │   ├── CartPanel.css             # Cart panel styles
 │   │   └── CountdownTimer.ts         # Reservation countdown timer (planned)
 │   ├── controllers/                  # Thin interface adapters
-│   │   ├── seat-controller.ts        # Handles seat selection/display
-│   │   ├── cart-controller.ts        # Handles cart interactions (note: typo in filename)
-│   │   └── checkout-controller.ts    # Handles checkout flow (planned)
+│   │   ├── seatController.ts         # Handles seat selection/display
+│   │   ├── cartController.ts         # Handles cart interactions
+│   │   └── checkoutController.ts     # Handles checkout flow (planned)
 │   ├── application/                  # Use cases / business orchestration
-│   │   ├── SeatReservationUseCase.ts # Seat reservation business logic
-│   │   └── order-booking-usecase.ts  # Booking completion logic (planned)
+│   │   ├── seatReservationUseCase.ts # Seat reservation business logic
+│   │   └── orderBookingUsecase.ts    # Booking completion logic
 │   ├── services/                     # Infrastructure & domain services
-│   │   ├── seat-service.ts           # Backend seat reservation APIs
-│   │   ├── cart-service.ts           # In-memory/localStorage cart management
-│   │   ├── pricing-service.ts        # Gets prices per category from API
-│   │   └── payment-service.ts        # Stripe integration (planned)
+│   │   ├── seatService.ts            # Backend seat reservation APIs
+│   │   ├── cartService.ts            # In-memory/localStorage cart management
+│   │   ├── pricingService.ts         # Gets prices per category from API
+│   │   ├── eventApiService.ts        # Fetches event data from API
+│   │   ├── eventContextService.ts    # Manages current event context
+│   │   └── paymentService.ts         # Stripe integration (planned)
 │   ├── infrastructure/               # Infrastructure adapters
-│   │   └── svg-seat-layout-adapter.ts # Parses SVG seat layouts
+│   │   └── svgSeatLayoutAdapter.ts   # Parses SVG seat layouts
 │   ├── models/                       # TypeScript interfaces and types (domain entities)
 │   │   ├── seat.ts                   # Seat entity and types
-│   │   ├── cart-item.ts              # Cart item entity
+│   │   ├── cartItem.ts               # Cart item entity
 │   │   ├── booking.ts                # Booking entity
-│   │   └── reservation.ts            # Reservation entity
-│   └── utils/                        # Generic helpers (planned)
-│       ├── date.ts                   # Date formatting and manipulation
-│       ├── storage.ts                # LocalStorage wrapper utilities
-│       └── currency.ts               # Currency formatting
+│   │   ├── reservation.ts            # Reservation entity
+│   │   └── event.ts                  # Event entity
+│   └── utils/                        # Generic helpers
+│       ├── html.ts                   # HTML utility helpers
+│       ├── date.ts                   # Date formatting and manipulation (planned)
+│       ├── storage.ts                # LocalStorage wrapper utilities (planned)
+│       └── currency.ts               # Currency formatting (planned)
 ├── public/                           # Static assets
 │   └── seats-layout.svg              # Venue seat layout SVG
 ├── index.html                        # Main HTML file
@@ -127,7 +131,6 @@ The project follows a clean architecture approach with clear separation of conce
    - TypeScript interfaces and types
    - Domain models
    - No dependencies on other layers
-   - Note: Currently split between `models/` directory (newer entities) and `models.ts` (legacy types)
 
 6. **Infrastructure Layer (infrastructure/)**: Technical adapters and implementations
    - SVG parsing and seat layout loading
@@ -211,7 +214,7 @@ The project uses **Vitest** with **jsdom** environment for testing:
 - Globals are enabled (no need to import `describe`, `it`, `expect`)
 - Web Components can be tested using Testing Library's DOM utilities
 
-Example test location: [src/components/SeatsMap.test.ts](src/components/SeatsMap.test.ts)
+Example test locations: [src/components/SeatsMap.test.ts](src/components/SeatsMap.test.ts), [src/services/eventContextService.test.ts](src/services/eventContextService.test.ts)
 
 ## Deployment
 

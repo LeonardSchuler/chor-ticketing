@@ -1,7 +1,7 @@
-import { CartService } from "../services/cartService";
-import { SeatReservationUseCase } from "../application/SeatReservationUseCase";
-import { OrderBookingUseCase } from "../application/orderBookingUsecase";
-import type { SeatReservedEvent } from "./seatController";
+import { CartService } from '../services/cartService';
+import { SeatReservationUseCase } from '../application/seatReservationUseCase';
+import { OrderBookingUseCase } from '../application/orderBookingUsecase';
+import type { SeatReservedEvent } from './seatController';
 
 export class CartController {
   private cartService: CartService;
@@ -12,7 +12,7 @@ export class CartController {
   constructor(
     cartService: CartService,
     reservationUseCase: SeatReservationUseCase,
-    orderBookingUseCase: OrderBookingUseCase,
+    orderBookingUseCase: OrderBookingUseCase
   ) {
     this.cartService = cartService;
     this.reservationUseCase = reservationUseCase;
@@ -21,9 +21,7 @@ export class CartController {
   }
 
   private setupEventListeners(): void {
-    window.addEventListener("seat-reserved", ((
-      event: CustomEvent<SeatReservedEvent>,
-    ) => {
+    window.addEventListener('seat-reserved', ((event: CustomEvent<SeatReservedEvent>) => {
       this.handleSeatReserved(event.detail);
     }) as EventListener);
   }
@@ -57,7 +55,7 @@ export class CartController {
       this.cartService.updateDiscount(seatId, discountPercent);
       this.broadcastCartUpdate();
     } catch (error) {
-      console.error("Error updating discount:", error);
+      console.error('Error updating discount:', error);
     }
   }
 
@@ -74,21 +72,19 @@ export class CartController {
     const result = this.orderBookingUseCase.completePurchase();
 
     if (!result.success) {
-      console.warn("Cannot purchase:", result.error);
+      console.warn('Cannot purchase:', result.error);
       return;
     }
 
     this.expirationTimers.forEach((timerId) => clearTimeout(timerId));
     this.expirationTimers.clear();
 
-    alert(
-      `Kauf erfolgreich!\nSitze: ${result.itemCount}\nTotal: CHF ${result.total.toFixed(2)}`,
-    );
+    alert(`Kauf erfolgreich!\nSitze: ${result.itemCount}\nTotal: CHF ${result.total.toFixed(2)}`);
 
     window.dispatchEvent(
-      new CustomEvent("purchase-completed", {
+      new CustomEvent('purchase-completed', {
         detail: { purchasedSeatIds: result.purchasedSeatIds },
-      }),
+      })
     );
 
     this.broadcastCartUpdate();
@@ -103,12 +99,12 @@ export class CartController {
     const reservedSeatIds = summary.items.map((item) => item.seat.id);
 
     window.dispatchEvent(
-      new CustomEvent("cart-updated", {
+      new CustomEvent('cart-updated', {
         detail: {
           summary,
           reservedSeatIds,
         },
-      }),
+      })
     );
   }
 }

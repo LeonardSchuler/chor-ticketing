@@ -1,25 +1,25 @@
 // src/app.ts
-import { SeatController } from "./controllers/seatController";
-import { CartController } from "./controllers/cartController";
-import { SeatReservationUseCase } from "./application/SeatReservationUseCase";
-import { OrderBookingUseCase } from "./application/orderBookingUsecase";
-import { SeatService } from "./services/seatService";
-import { CartService } from "./services/cartService";
-import { PricingService } from "./services/pricingService";
-import { EventContextService } from "./services/eventContextService";
-import { EventApiService } from "./services/eventApiService";
-import { SvgSeatLayoutAdapter } from "./infrastructure/svgSeatLayoutAdapter";
-import { SeatsMap } from "./components/SeatsMap";
-import { CartPanel } from "./components/CartPanel";
+import { SeatController } from './controllers/seatController';
+import { CartController } from './controllers/cartController';
+import { SeatReservationUseCase } from './application/seatReservationUseCase';
+import { OrderBookingUseCase } from './application/orderBookingUsecase';
+import { SeatService } from './services/seatService';
+import { CartService } from './services/cartService';
+import { PricingService } from './services/pricingService';
+import { EventContextService } from './services/eventContextService';
+import { EventApiService } from './services/eventApiService';
+import { SvgSeatLayoutAdapter } from './infrastructure/svgSeatLayoutAdapter';
+import { SeatsMap } from './components/SeatsMap';
+import { CartPanel } from './components/CartPanel';
 
 export class App {
   async bootstrap() {
     // 1. Register Web Components
-    if (!customElements.get("seats-map")) {
-      customElements.define("seats-map", SeatsMap);
+    if (!customElements.get('seats-map')) {
+      customElements.define('seats-map', SeatsMap);
     }
-    if (!customElements.get("cart-panel")) {
-      customElements.define("cart-panel", CartPanel);
+    if (!customElements.get('cart-panel')) {
+      customElements.define('cart-panel', CartPanel);
     }
 
     // 2. Initialize Event Context and API Services
@@ -41,9 +41,7 @@ export class App {
 
     // 5. Load seat layout from SVG using adapter
     const seatLayoutAdapter = new SvgSeatLayoutAdapter();
-    const { seats: seatLayout, svgElement } = await seatLayoutAdapter.load(
-      event.seatLayoutUrl,
-    );
+    const { seats: seatLayout, svgElement } = await seatLayoutAdapter.load(event.seatLayoutUrl);
 
     // 6. Initialize seats in domain service (uses current event from context)
     seatService.initializeSeats(seatLayout);
@@ -54,15 +52,11 @@ export class App {
 
     // 8. Initialize Controllers
     const seatController = new SeatController(seatReservationUC);
-    const cartController = new CartController(
-      cartService,
-      seatReservationUC,
-      orderBookingUC,
-    );
+    const cartController = new CartController(cartService, seatReservationUC, orderBookingUC);
 
     // 9. Mount Components
-    const appRoot = document.getElementById("app");
-    if (!appRoot) throw new Error("App root not found");
+    const appRoot = document.getElementById('app');
+    if (!appRoot) throw new Error('App root not found');
 
     appRoot.innerHTML = `
 <div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 max-w-7xl mx-auto">
@@ -77,7 +71,7 @@ export class App {
     `;
 
     // 10. Initialize SeatsMap component with SVG layout
-    const seatsMapElement = appRoot.querySelector("seats-map") as SeatsMap;
+    const seatsMapElement = appRoot.querySelector('seats-map') as SeatsMap;
     if (seatsMapElement) {
       seatsMapElement.init(svgElement);
     }
@@ -88,40 +82,33 @@ export class App {
     // 12. Initial cart update to sync UI
     cartController.syncCartState();
 
-    console.log("✅ App initialized successfully");
+    console.log('✅ App initialized successfully');
     console.log(`📍 Event: ${event.title} (${event.id})`);
-    console.log(
-      `🪑 Seats available: ${seatService.getAllSeats().length}`,
-    );
+    console.log(`🪑 Seats available: ${seatService.getAllSeats().length}`);
   }
 
-  private setupEventListeners(
-    seatController: SeatController,
-    cartController: CartController,
-  ) {
+  private setupEventListeners(seatController: SeatController, cartController: CartController) {
     // Listen to seat selection events from SeatsMap
-    window.addEventListener("seat-selected", ((event: CustomEvent) => {
+    window.addEventListener('seat-selected', ((event: CustomEvent) => {
       const detail = event.detail as { seatNumber: string };
       seatController.handleSeatSelection(detail.seatNumber);
     }) as EventListener);
 
     // Listen to cart events from CartPanel
-    window.addEventListener("cart-item-remove", ((event: CustomEvent) => {
+    window.addEventListener('cart-item-remove', ((event: CustomEvent) => {
       const detail = event.detail as { seatId: string };
       cartController.handleRemoveItem(detail.seatId);
     }) as EventListener);
 
-    window.addEventListener("cart-clear", () => {
+    window.addEventListener('cart-clear', () => {
       cartController.handleClearCart();
     });
 
-    window.addEventListener("cart-purchase", () => {
+    window.addEventListener('cart-purchase', () => {
       cartController.handlePurchase();
     });
 
-    window.addEventListener("cart-item-discount-update", ((
-      event: CustomEvent,
-    ) => {
+    window.addEventListener('cart-item-discount-update', ((event: CustomEvent) => {
       const detail = event.detail as { seatId: string; discount: number };
       cartController.handleUpdateDiscount(detail.seatId, detail.discount);
     }) as EventListener);

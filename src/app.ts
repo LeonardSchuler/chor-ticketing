@@ -23,40 +23,32 @@ export class App {
       customElements.define('cart-panel', CartPanel);
     }
 
-    // 2. Initialize services and use cases
+    // 2. Initialize services
     const eventApiService = new EventApiService();
     const eventContextService = new EventContextService();
-    const eventSelectionUseCase = new EventSelectionUseCase(eventApiService, eventContextService);
+    const seatService = new SeatService();
+    const cartService = new CartService();
+    const pricingService = new PricingService();
+    pricingService.init();
 
-    // 3. Initialize and load the event (handles URL params, localStorage, and defaults)
-    const event = await eventSelectionUseCase.initializeEvent();
+    // 3. Initialize and load the event (resolves event, loads seat layout, initializes seats)
+    const seatLayoutAdapter = new SvgSeatLayoutAdapter();
+    const eventSelectionUseCase = new EventSelectionUseCase(eventApiService, eventContextService, seatLayoutAdapter, seatService);
+    const { event, svgElement } = await eventSelectionUseCase.initializeEvent();
 
     console.log(`📅 Loaded event: ${event.title}`);
     console.log(`📍 Venue: ${event.venue}`);
     console.log(`📆 Date: ${event.date}`);
 
-    // 4. Initialize Services with EventContext
-    const seatService = new SeatService(eventContextService);
-    const cartService = new CartService();
-    const pricingService = new PricingService();
-    pricingService.init(); // Initialize pricing data
-
-    // 5. Load seat layout from SVG using adapter
-    const seatLayoutAdapter = new SvgSeatLayoutAdapter();
-    const { seats: seatLayout, svgElement } = await seatLayoutAdapter.load(event.seatLayoutUrl);
-
-    // 6. Initialize seats in domain service (uses current event from context)
-    seatService.initializeSeats(seatLayout);
-
-    // 7. Initialize Use Cases
+    // 4. Initialize Use Cases
     const seatReservationUC = new SeatReservationUseCase(seatService, cartService, pricingService);
     const orderBookingUC = new OrderBookingUseCase(cartService);
 
-    // 8. Initialize Controllers
+    // 5. Initialize Controllers
     const seatController = new SeatController(seatReservationUC);
     const cartController = new CartController(cartService, seatReservationUC, orderBookingUC);
 
-    // 9. Mount Components
+    // 6. Mount Components
     const appRoot = document.getElementById('app');
     if (!appRoot) throw new Error('App root not found');
 
@@ -72,16 +64,16 @@ export class App {
 </div>
     `;
 
-    // 10. Initialize SeatsMap component with SVG layout
+    // 7. Initialize SeatsMap component with SVG layout
     const seatsMapElement = appRoot.querySelector('seats-map') as SeatsMap;
     if (seatsMapElement) {
       seatsMapElement.init(svgElement);
     }
 
-    // 11. Wire up global event listeners
+    // 8. Wire up global event listeners
     this.setupEventListeners(seatController, cartController);
 
-    // 12. Initial cart update to sync UI
+    // 9. Initial cart update to sync UI
     cartController.syncCartState();
 
     console.log('✅ App initialized successfully');

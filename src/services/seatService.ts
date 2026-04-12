@@ -6,28 +6,24 @@ import type {
   ReservationResponse,
 } from "../models/reservation";
 import type { SeatLayout } from "../infrastructure/svgSeatLayoutAdapter";
-import type { EventContextService } from "./eventContextService";
 
 export class SeatService {
   private seats: Map<string, Seat> = new Map();
   private reservations: Map<string, Reservation> = new Map();
   private cleanupIntervalId?: number;
-  private eventContextService: EventContextService;
+  private currentEventId: string = "";
 
-  constructor(eventContextService: EventContextService) {
-    this.eventContextService = eventContextService;
-    // Start cleanup interval to remove expired reservations
+  constructor() {
     this.startCleanupInterval();
   }
 
   /**
    * Initialize seats for an event from seat layout data.
-   * This method is infrastructure-agnostic and doesn't know about SVG.
-   * Uses the current event from EventContextService.
    * @param layout - Array of seat layout data (number + category)
+   * @param eventId - The event these seats belong to
    */
-  initializeSeats(layout: SeatLayout[]): void {
-    const eventId = this.eventContextService.getCurrentEventId();
+  initializeSeats(layout: SeatLayout[], eventId: string): void {
+    this.currentEventId = eventId;
 
     layout.forEach(({ number, category }) => {
       const seat: Seat = {
@@ -50,12 +46,10 @@ export class SeatService {
 
   /**
    * Get all seats for the current event.
-   * If eventId is provided, filters by that event instead (useful for multi-event scenarios).
-   * @param eventId - Optional event ID to filter by. If not provided, uses current event.
-   * @returns Array of seats
+   * @param eventId - Optional event ID to filter by. Defaults to the initialized event.
    */
   getAllSeats(eventId?: string): Seat[] {
-    const targetEventId = eventId ?? this.eventContextService.getCurrentEventId();
+    const targetEventId = eventId ?? this.currentEventId;
     return Array.from(this.seats.values()).filter(
       (seat) => seat.eventId === targetEventId,
     );
@@ -63,9 +57,7 @@ export class SeatService {
 
   /**
    * Reserve a seat for the current event.
-   * Uses the current event from EventContextService if not provided in request.
    * @param request - Reservation request with seatId and optional eventId
-   * @returns Reservation response with success status and details
    */
   reserveSeat(request: ReservationRequest): ReservationResponse {
     const seat = this.seats.get(request.seatId);
@@ -84,10 +76,8 @@ export class SeatService {
       };
     }
 
-    // Use eventId from request, or fall back to current event
-    const eventId = request.eventId ?? this.eventContextService.getCurrentEventId();
+    const eventId = request.eventId ?? this.currentEventId;
 
-    // Verify the seat belongs to the target event
     if (seat.eventId !== eventId) {
       return {
         success: false,
@@ -95,7 +85,6 @@ export class SeatService {
       };
     }
 
-    // Create reservation
     const durationMinutes = request.durationMinutes || 15;
     const now = new Date();
     const expiresAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
@@ -108,7 +97,6 @@ export class SeatService {
       expiresAt,
     };
 
-    // Update seat status
     seat.status = SeatStatus.RESERVED;
     this.seats.set(seat.id, seat);
     this.reservations.set(reservation.id, reservation);
@@ -141,7 +129,6 @@ export class SeatService {
   }
 
   private startCleanupInterval(): void {
-    // Check for expired reservations every 10 seconds
     this.cleanupIntervalId = window.setInterval(() => {
       this.cleanupExpiredReservations();
     }, 10000);

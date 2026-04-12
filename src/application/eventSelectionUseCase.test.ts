@@ -3,14 +3,19 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { EventSelectionUseCase } from "./eventSelectionUseCase";
 import type { EventApiService } from "../services/eventApiService";
 import type { EventContextService } from "../services/eventContextService";
+import type { SvgSeatLayoutAdapter } from "../infrastructure/svgSeatLayoutAdapter";
+import type { SeatService } from "../services/seatService";
 import type { Event } from "../models/event";
 
 describe("EventSelectionUseCase", () => {
   let useCase: EventSelectionUseCase;
   let mockEventApiService: EventApiService;
   let mockEventContextService: EventContextService;
+  let mockSeatLayoutAdapter: SvgSeatLayoutAdapter;
+  let mockSeatService: SeatService;
   let mockEvent: Event;
   let anotherMockEvent: Event;
+  let mockSvgElement: SVGElement;
 
   beforeEach(() => {
     mockEventApiService = {
@@ -26,7 +31,22 @@ describe("EventSelectionUseCase", () => {
       clearCurrentEvent: vi.fn(),
     } as unknown as EventContextService;
 
-    useCase = new EventSelectionUseCase(mockEventApiService, mockEventContextService);
+    mockSvgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg") as SVGElement;
+
+    mockSeatLayoutAdapter = {
+      load: vi.fn().mockResolvedValue({ seats: [], svgElement: mockSvgElement }),
+    } as unknown as SvgSeatLayoutAdapter;
+
+    mockSeatService = {
+      initializeSeats: vi.fn(),
+    } as unknown as SeatService;
+
+    useCase = new EventSelectionUseCase(
+      mockEventApiService,
+      mockEventContextService,
+      mockSeatLayoutAdapter,
+      mockSeatService,
+    );
 
     mockEvent = {
       id: "event-1",
@@ -57,7 +77,7 @@ describe("EventSelectionUseCase", () => {
       window.history.replaceState({}, "", "?eventId=event-2");
       vi.mocked(mockEventApiService.getEvent).mockResolvedValue(anotherMockEvent);
 
-      const event = await useCase.initializeEvent();
+      const { event } = await useCase.initializeEvent();
 
       expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-2");
       expect(event).toEqual(anotherMockEvent);
@@ -69,7 +89,7 @@ describe("EventSelectionUseCase", () => {
       localStorage.setItem("lastViewedEventId", "event-1");
       vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
 
-      const event = await useCase.initializeEvent();
+      const { event } = await useCase.initializeEvent();
 
       expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
       expect(event).toEqual(mockEvent);
@@ -80,7 +100,7 @@ describe("EventSelectionUseCase", () => {
       vi.mocked(mockEventApiService.getAllEvents).mockResolvedValue([mockEvent, anotherMockEvent]);
       vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
 
-      const event = await useCase.initializeEvent();
+      const { event } = await useCase.initializeEvent();
 
       expect(mockEventApiService.getAllEvents).toHaveBeenCalled();
       expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
@@ -106,23 +126,28 @@ describe("EventSelectionUseCase", () => {
   });
 
   describe("selectEvent", () => {
-    it("should load specific event by ID", async () => {
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(anotherMockEvent);
+    it("should load event, seat layout, and initialize seats", async () => {
+      const mockSeats = [{ number: "A1", category: "cat-1" as const }];
+      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
+      vi.mocked(mockSeatLayoutAdapter.load).mockResolvedValue({ seats: mockSeats, svgElement: mockSvgElement });
 
-      const event = await useCase.selectEvent("event-2");
+      const { event, svgElement } = await useCase.selectEvent("event-1");
 
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-2");
-      expect(event).toEqual(anotherMockEvent);
-      expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(anotherMockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
+      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
+      expect(mockSeatLayoutAdapter.load).toHaveBeenCalledWith(mockEvent.seatLayoutUrl);
+      expect(mockSeatService.initializeSeats).toHaveBeenCalledWith(mockSeats, "event-1");
+      expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(mockEvent);
+      expect(event).toEqual(mockEvent);
+      expect(svgElement).toBe(mockSvgElement);
+      expect(localStorage.getItem("lastViewedEventId")).toBe("event-1");
     });
 
-    it("should call setCurrentEvent when selecting", async () => {
+    it("should return svgElement from seat layout adapter", async () => {
       vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
 
-      await useCase.selectEvent("event-1");
+      const { svgElement } = await useCase.selectEvent("event-1");
 
-      expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(mockEvent);
+      expect(svgElement).toBe(mockSvgElement);
     });
   });
 });

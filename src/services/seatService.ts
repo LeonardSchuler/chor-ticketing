@@ -115,7 +115,7 @@ export class SeatService {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          seatId: request.seatId,
+          seatId: Number(seat.number),
           durationMinutes: request.durationMinutes || 15,
         }),
       });
@@ -134,13 +134,13 @@ export class SeatService {
 
     const data = (await response.json()) as {
       id: string;
-      seatId: string;
+      seatId: number;
       createdAt: string;
       expiresAt: string;
     };
     const reservation: Reservation = {
       id: data.id,
-      seatId: data.seatId,
+      seatId: `seat-${data.seatId}`,
       eventId,
       createdAt: new Date(data.createdAt),
       expiresAt: new Date(data.expiresAt),

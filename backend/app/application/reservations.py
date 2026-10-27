@@ -31,7 +31,7 @@ class ReservationUseCases:
     def reserve(
         self,
         event_id: int,
-        seat_id: str,
+        seat_id: int,
         duration_minutes: int = DEFAULT_DURATION_MINUTES,
     ) -> Reservation:
         self._require_event(event_id)

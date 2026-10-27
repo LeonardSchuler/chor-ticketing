@@ -51,7 +51,7 @@ def load(db: Database, path: str | Path = DEFAULT_SEED_FILE) -> int:
             conn.execute("DELETE FROM prices WHERE event_id = ?", (event_id,))
             conn.executemany(
                 "INSERT INTO prices (event_id, category, price) VALUES (?, ?, ?)",
-                [(event_id, c, p) for c, p in e["prices"].items()],
+                [(event_id, int(c), p) for c, p in e["prices"].items()],
             )
             insert_bookings(
                 conn, event_id, e.get("bookings", []), "seed", datetime.now(UTC)

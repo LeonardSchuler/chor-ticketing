@@ -14,7 +14,11 @@ export class PricingService {
   async init(eventId: string): Promise<void> {
     const res = await fetch(`${this.apiBaseUrl}/events/${eventId}/prices`);
     if (!res.ok) throw new Error(`Failed to load prices for event ${eventId}`);
-    this.prices = (await res.json()) as PricingMap;
+    const raw = (await res.json()) as Record<string, number>;
+    // API keys categories by number ("1"); the frontend uses "cat-1"
+    this.prices = Object.fromEntries(
+      Object.entries(raw).map(([category, price]) => [`cat-${category}`, price]),
+    ) as PricingMap;
   }
 
   getPrice(category: SeatCategory): number {

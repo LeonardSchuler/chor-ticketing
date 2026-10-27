@@ -39,8 +39,8 @@ export class EventApiService {
   async getBookedSeatIds(eventId: string): Promise<string[]> {
     const response = await fetch(`${this.apiBaseUrl}/events/${eventId}/bookings`);
     if (!response.ok) throw new Error(`Failed to load bookings for event ${eventId}`);
-    const bookings = (await response.json()) as { seatId: string }[];
-    return bookings.map((b) => b.seatId);
+    const bookings = (await response.json()) as { seatId: number }[];
+    return bookings.map((b) => `seat-${b.seatId}`);
   }
 
   /**
@@ -51,13 +51,13 @@ export class EventApiService {
     if (!response.ok) throw new Error(`Failed to load reservations for event ${eventId}`);
     const reservations = (await response.json()) as {
       id: string;
-      seatId: string;
+      seatId: number;
       createdAt: string;
       expiresAt: string;
     }[];
     return reservations.map((r) => ({
       id: r.id,
-      seatId: r.seatId,
+      seatId: `seat-${r.seatId}`,
       eventId,
       createdAt: new Date(r.createdAt),
       expiresAt: new Date(r.expiresAt),

@@ -20,11 +20,11 @@ class BookingUseCases:
         self._bookings = bookings
         self._clock = clock
 
-    def list_booked_seat_ids(self, event_id: int) -> list[str]:
+    def list_booked_seat_ids(self, event_id: int) -> list[int]:
         self._require_event(event_id)
         return self._bookings.list_seat_ids(event_id)
 
-    def confirm(self, event_id: int, reservation_ids: list[str]) -> list[str]:
+    def confirm(self, event_id: int, reservation_ids: list[str]) -> list[int]:
         self._require_event(event_id)
         seat_ids = self._bookings.confirm(
             event_id, reservation_ids, "purchase", self._clock()

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
 
-SeatCategory = Literal["cat-1", "cat-2", "cat-3", "cat-4"]
+SeatCategory = Literal[1, 2, 3, 4]
 
 PricingMap = dict[SeatCategory, int]
 
@@ -22,7 +22,7 @@ class Event:
 @dataclass(frozen=True)
 class Reservation:
     id: str
-    seat_id: str
+    seat_id: int
     event_id: int
     created_at: datetime
     expires_at: datetime

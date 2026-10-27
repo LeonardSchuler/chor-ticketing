@@ -4,7 +4,7 @@ class EventNotFound(Exception):
 
 
 class SeatUnavailable(Exception):
-    def __init__(self, seat_id: str):
+    def __init__(self, seat_id: int):
         super().__init__(f"Seat '{seat_id}' is not available")
 
 

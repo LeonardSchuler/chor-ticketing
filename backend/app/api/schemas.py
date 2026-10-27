@@ -25,18 +25,18 @@ class EventOut(CamelModel):
 
 class ReservationOut(CamelModel):
     id: str
-    seat_id: str
+    seat_id: int
     event_id: int
     created_at: datetime
     expires_at: datetime
 
 
 class BookingOut(CamelModel):
-    seat_id: str
+    seat_id: int
 
 
 class ReservationIn(CamelModel):
-    seat_id: str = Field(min_length=1)
+    seat_id: int = Field(ge=1)
     duration_minutes: int = Field(default=15, ge=1, le=60)
 
 

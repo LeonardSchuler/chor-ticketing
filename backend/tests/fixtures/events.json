@@ -8,14 +8,14 @@
     "startTime": "19:30",
     "endTime": "21:30",
     "prices": {
-      "cat-1": 55,
-      "cat-2": 65,
-      "cat-3": 45,
-      "cat-4": 75
+      "1": 55,
+      "2": 65,
+      "3": 45,
+      "4": 75
     },
     "bookings": [
-      "seat-9001",
-      "seat-9002"
+      9001,
+      9002
     ]
   },
   {
@@ -24,10 +24,10 @@
     "venue": "Konzerthaus Berlin",
     "seatLayoutUrl": "/seats-layout.svg",
     "prices": {
-      "cat-1": 55,
-      "cat-2": 65,
-      "cat-3": 45,
-      "cat-4": 75
+      "1": 55,
+      "2": 65,
+      "3": 45,
+      "4": 75
     }
   },
   {
@@ -36,10 +36,10 @@
     "venue": "Dom zu Freiburg",
     "seatLayoutUrl": "/seats-layout.svg",
     "prices": {
-      "cat-1": 55,
-      "cat-2": 65,
-      "cat-3": 45,
-      "cat-4": 75
+      "1": 55,
+      "2": 65,
+      "3": 45,
+      "4": 75
     }
   }
 ]

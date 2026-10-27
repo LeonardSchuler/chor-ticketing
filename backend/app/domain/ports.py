@@ -14,16 +14,16 @@ class EventRepository(Protocol):
 
 class BookingRepository(Protocol):
     def add_many(
-        self, event_id: int, seat_ids: list[str], source: str, now: datetime
+        self, event_id: int, seat_ids: list[int], source: str, now: datetime
     ) -> int:
         """Insert bookings for seats not yet booked; returns how many were added."""
         ...
 
-    def list_seat_ids(self, event_id: int) -> list[str]: ...
+    def list_seat_ids(self, event_id: int) -> list[int]: ...
 
     def confirm(
         self, event_id: int, reservation_ids: list[str], source: str, now: datetime
-    ) -> list[str] | None:
+    ) -> list[int] | None:
         """Atomically turn active reservations into bookings.
 
         Returns the booked seat ids, or None (changing nothing) if any

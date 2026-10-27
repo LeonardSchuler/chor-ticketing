@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS events (
 
 CREATE TABLE IF NOT EXISTS prices (
     event_id INTEGER NOT NULL REFERENCES events(id),
-    category TEXT NOT NULL,
+    category INTEGER NOT NULL,
     price INTEGER NOT NULL,
     PRIMARY KEY (event_id, category)
 );
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS prices (
 CREATE TABLE IF NOT EXISTS reservations (
     id TEXT PRIMARY KEY,
     event_id INTEGER NOT NULL REFERENCES events(id),
-    seat_id TEXT NOT NULL,
+    seat_id INTEGER NOT NULL,
     created_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     UNIQUE (event_id, seat_id)
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL REFERENCES events(id),
-    seat_id TEXT NOT NULL,
+    seat_id INTEGER NOT NULL,
     source TEXT NOT NULL,
     created_at TEXT NOT NULL,
     UNIQUE (event_id, seat_id)
@@ -73,7 +73,7 @@ class Database:
 def insert_bookings(
     conn: sqlite3.Connection,
     event_id: int,
-    seat_ids: list[str],
+    seat_ids: list[int],
     source: str,
     now: datetime,
 ) -> int:
@@ -122,7 +122,7 @@ class SqliteBookingRepository:
         self._db = db
 
     def add_many(
-        self, event_id: int, seat_ids: list[str], source: str, now: datetime
+        self, event_id: int, seat_ids: list[int], source: str, now: datetime
     ) -> int:
         with self._db.connect() as conn:
             conn.execute("BEGIN")
@@ -130,7 +130,7 @@ class SqliteBookingRepository:
             conn.execute("COMMIT")
             return added
 
-    def list_seat_ids(self, event_id: int) -> list[str]:
+    def list_seat_ids(self, event_id: int) -> list[int]:
         with self._db.connect() as conn:
             rows = conn.execute(
                 "SELECT seat_id FROM bookings WHERE event_id = ? ORDER BY seat_id",
@@ -140,7 +140,7 @@ class SqliteBookingRepository:
 
     def confirm(
         self, event_id: int, reservation_ids: list[str], source: str, now: datetime
-    ) -> list[str] | None:
+    ) -> list[int] | None:
         ids = list(dict.fromkeys(reservation_ids))
         marks = ",".join("?" * len(ids))
         with self._db.connect() as conn:

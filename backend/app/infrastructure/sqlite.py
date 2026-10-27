@@ -4,7 +4,14 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 
-from app.domain.models import Event, PricingMap, Reservation
+from app.domain.models import (
+    Event,
+    Order,
+    PricingMap,
+    PurchaseItem,
+    PurchasedSeat,
+    Reservation,
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (
@@ -35,15 +42,32 @@ CREATE TABLE IF NOT EXISTS reservations (
     UNIQUE (event_id, seat_id)
 );
 
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id INTEGER NOT NULL REFERENCES events(id),
+    total REAL NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL REFERENCES events(id),
     seat_id INTEGER NOT NULL,
     source TEXT NOT NULL,
     created_at TEXT NOT NULL,
+    order_id INTEGER REFERENCES orders(id),
+    price INTEGER,
+    discount REAL,
     UNIQUE (event_id, seat_id)
 );
 """
+
+# Columns added after the first release; applied to databases created before them.
+BOOKING_MIGRATIONS = {
+    "order_id": "INTEGER REFERENCES orders(id)",
+    "price": "INTEGER",
+    "discount": "REAL",
+}
 
 
 class Database:
@@ -68,6 +92,10 @@ class Database:
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.executescript(SCHEMA)
+            existing = {r["name"] for r in conn.execute("PRAGMA table_info(bookings)")}
+            for column, definition in BOOKING_MIGRATIONS.items():
+                if column not in existing:
+                    conn.execute(f"ALTER TABLE bookings ADD COLUMN {column} {definition}")
 
 
 def insert_bookings(
@@ -139,28 +167,49 @@ class SqliteBookingRepository:
         return [r["seat_id"] for r in rows]
 
     def confirm(
-        self, event_id: int, reservation_ids: list[str], source: str, now: datetime
-    ) -> list[int] | None:
-        ids = list(dict.fromkeys(reservation_ids))
+        self, event_id: int, items: list[PurchaseItem], source: str, now: datetime
+    ) -> Order | None:
+        by_reservation = {i.reservation_id: i for i in items}
+        ids = list(by_reservation)
         marks = ",".join("?" * len(ids))
         with self._db.connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
             rows = conn.execute(
-                f"SELECT seat_id FROM reservations WHERE event_id = ?"
+                f"SELECT id, seat_id FROM reservations WHERE event_id = ?"
                 f" AND expires_at > ? AND id IN ({marks})",
                 (event_id, now.isoformat(), *ids),
             ).fetchall()
             if len(rows) != len(ids):
                 conn.execute("ROLLBACK")
                 return None
-            seat_ids = [r["seat_id"] for r in rows]
-            insert_bookings(conn, event_id, seat_ids, source, now)
+            seats = [
+                PurchasedSeat(
+                    r["seat_id"],
+                    by_reservation[r["id"]].price,
+                    by_reservation[r["id"]].discount,
+                )
+                for r in rows
+            ]
+            total = sum(s.price * (1 - s.discount / 100) for s in seats)
+            order_id = conn.execute(
+                "INSERT INTO orders (event_id, total, created_at) VALUES (?, ?, ?)",
+                (event_id, total, now.isoformat()),
+            ).lastrowid
+            conn.executemany(
+                "INSERT INTO bookings"
+                " (event_id, seat_id, source, created_at, order_id, price, discount)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (event_id, s.seat_id, source, now.isoformat(), order_id, s.price, s.discount)
+                    for s in seats
+                ],
+            )
             conn.execute(
                 f"DELETE FROM reservations WHERE event_id = ? AND id IN ({marks})",
                 (event_id, *ids),
             )
             conn.execute("COMMIT")
-            return seat_ids
+            return Order(order_id, event_id, total, now, seats)
 
 
 class SqliteReservationRepository:

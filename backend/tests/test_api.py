@@ -150,20 +150,76 @@ def test_confirm_booking_consumes_reservations(client):
     rid = res.json()["id"]
     other = client.post("/api/events/1/reservations", json={"seatId": 11}).json()["id"]
 
-    done = client.post("/api/events/1/bookings", json={"reservationIds": [rid, other]})
+    done = client.post(
+        "/api/events/1/bookings",
+        json={
+            "items": [
+                {"reservationId": rid, "price": 50},
+                {"reservationId": other, "price": 40, "discount": 50},
+            ]
+        },
+    )
     assert done.status_code == 201
-    assert sorted(b["seatId"] for b in done.json()) == [10, 11]
+    order = done.json()
+    assert order["total"] == 70
+    assert sorted((s["seatId"], s["price"], s["discount"]) for s in order["seats"]) == [
+        (10, 50, 0),
+        (11, 40, 50),
+    ]
     assert {"seatId": 10} in client.get("/api/events/1/bookings").json()
     assert client.get("/api/events/1/reservations").json() == []
     # Seat is now permanently taken
     assert client.post("/api/events/1/reservations", json={"seatId": 10}).status_code == 409
 
 
+def item(reservation_id):
+    return {"reservationId": reservation_id, "price": 50}
+
+
 def test_confirm_booking_is_all_or_nothing(client):
     rid = client.post("/api/events/1/reservations", json={"seatId": 20}).json()["id"]
-    res = client.post("/api/events/1/bookings", json={"reservationIds": [rid, "res-nope"]})
+    res = client.post("/api/events/1/bookings", json={"items": [item(rid), item("res-nope")]})
     assert res.status_code == 409
     assert {"seatId": 20} not in client.get("/api/events/1/bookings").json()
     assert len(client.get("/api/events/1/reservations").json()) == 1
-    assert client.post("/api/events/1/bookings", json={"reservationIds": []}).status_code == 422
-    assert client.post("/api/events/999/bookings", json={"reservationIds": [rid]}).status_code == 404
+    assert client.post("/api/events/1/bookings", json={"items": []}).status_code == 422
+    assert client.post("/api/events/999/bookings", json={"items": [item(rid)]}).status_code == 404
+
+
+def test_bookings_of_one_purchase_share_an_order(client, tmp_path):
+    url = "/api/events/1/reservations"
+    a, b, c = (client.post(url, json={"seatId": n}).json()["id"] for n in (30, 31, 32))
+    first = client.post("/api/events/1/bookings", json={"items": [item(a), item(b)]})
+    second = client.post("/api/events/1/bookings", json={"items": [item(c)]})
+    assert first.json()["id"] != second.json()["id"]
+
+    with Database(tmp_path / "test.db").connect() as conn:
+        rows = conn.execute(
+            "SELECT seat_id, order_id FROM bookings WHERE order_id IS NOT NULL"
+        ).fetchall()
+    orders = {}
+    for r in rows:
+        orders.setdefault(r["order_id"], set()).add(r["seat_id"])
+    assert sorted(orders.values(), key=min) == [{30, 31}, {32}]
+
+
+def test_init_migrates_existing_bookings_table(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.execute(
+        "CREATE TABLE bookings (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id INTEGER"
+        " NOT NULL, seat_id INTEGER NOT NULL, source TEXT NOT NULL, created_at TEXT"
+        " NOT NULL, UNIQUE (event_id, seat_id))"
+    )
+    conn.execute("INSERT INTO bookings VALUES (1, 1, 366, 'purchase', 'x')")
+    conn.commit()
+    conn.close()
+
+    db = Database(path)
+    db.init()
+    db.init()  # idempotent
+    with db.connect() as conn:
+        row = conn.execute("SELECT * FROM bookings").fetchone()
+    assert row["seat_id"] == 366 and row["order_id"] is None

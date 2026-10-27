@@ -26,3 +26,30 @@ class Reservation:
     event_id: int
     created_at: datetime
     expires_at: datetime
+
+
+@dataclass(frozen=True)
+class PurchaseItem:
+    """One reserved seat in a purchase, with the price the customer paid for it."""
+
+    reservation_id: str
+    price: int
+    discount: float  # percentage (0-100)
+
+
+@dataclass(frozen=True)
+class PurchasedSeat:
+    seat_id: int
+    price: int
+    discount: float
+
+
+@dataclass(frozen=True)
+class Order:
+    """Seats purchased together in one checkout."""
+
+    id: int
+    event_id: int
+    total: float
+    created_at: datetime
+    seats: list[PurchasedSeat]

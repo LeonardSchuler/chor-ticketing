@@ -1,11 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from app.api.schemas import BookingIn, BookingOut, EventOut, ReservationIn, ReservationOut
+from app.api.schemas import (
+    BookingIn,
+    BookingOut,
+    EventOut,
+    OrderOut,
+    ReservationIn,
+    ReservationOut,
+)
 from app.application.bookings import BookingUseCases
 from app.application.events import EventUseCases
 from app.application.reservations import ReservationUseCases
 from app.domain.errors import EventNotFound, ReservationInvalid, SeatUnavailable
-from app.domain.models import PricingMap
+from app.domain.models import PricingMap, PurchaseItem
 
 router = APIRouter(prefix="/api")
 
@@ -54,7 +61,7 @@ def list_bookings(
 
 @router.post(
     "/events/{event_id}/bookings",
-    response_model=list[BookingOut],
+    response_model=OrderOut,
     response_model_by_alias=True,
     status_code=status.HTTP_201_CREATED,
 )
@@ -63,7 +70,10 @@ def create_bookings(
     body: BookingIn,
     uc: BookingUseCases = Depends(get_booking_use_cases),
 ):
-    return [BookingOut(seat_id=s) for s in uc.confirm(event_id, body.reservation_ids)]
+    items = [
+        PurchaseItem(i.reservation_id, i.price, i.discount) for i in body.items
+    ]
+    return uc.confirm(event_id, items)
 
 
 @router.get(

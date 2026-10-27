@@ -2,6 +2,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from app.domain.errors import EventNotFound, ReservationInvalid
+from app.domain.models import Order, PurchaseItem
 from app.domain.ports import BookingRepository, EventRepository
 
 
@@ -24,14 +25,12 @@ class BookingUseCases:
         self._require_event(event_id)
         return self._bookings.list_seat_ids(event_id)
 
-    def confirm(self, event_id: int, reservation_ids: list[str]) -> list[int]:
+    def confirm(self, event_id: int, items: list[PurchaseItem]) -> Order:
         self._require_event(event_id)
-        seat_ids = self._bookings.confirm(
-            event_id, reservation_ids, "purchase", self._clock()
-        )
-        if seat_ids is None:
+        order = self._bookings.confirm(event_id, items, "purchase", self._clock())
+        if order is None:
             raise ReservationInvalid()
-        return seat_ids
+        return order
 
     def _require_event(self, event_id: int) -> None:
         if self._events.get(event_id) is None:

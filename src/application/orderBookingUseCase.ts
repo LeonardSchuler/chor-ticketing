@@ -4,6 +4,7 @@ import { SeatService } from "../services/seatService";
 export interface PurchaseResult {
   success: boolean;
   purchasedSeatIds: string[];
+  orderId?: number;
   total: number;
   itemCount: number;
   error?: string;
@@ -26,7 +27,11 @@ export class OrderBookingUseCase {
     }
 
     const booking = await this.seatService.confirmBooking(
-      summary.items.map((item) => item.reservationId),
+      summary.items.map((item) => ({
+        reservationId: item.reservationId,
+        price: item.price,
+        discount: item.discount,
+      })),
     );
     if (!booking.success) {
       return { success: false, purchasedSeatIds: [], total: 0, itemCount: 0, error: booking.error };
@@ -37,6 +42,6 @@ export class OrderBookingUseCase {
 
     this.cartService.clear();
 
-    return { success: true, purchasedSeatIds, total, itemCount };
+    return { success: true, purchasedSeatIds, orderId: booking.orderId, total, itemCount };
   }
 }

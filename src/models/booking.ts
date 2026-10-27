@@ -8,6 +8,13 @@ export const BookingStatus = {
   CANCELLED: "cancelled" as const,
 };
 
+/** One reserved seat in a purchase, with the price the customer pays for it. */
+export interface PurchaseItem {
+  reservationId: string;
+  price: number;
+  discount: number; // percentage (0-100)
+}
+
 export interface Booking {
   id: string;
   eventId: string;

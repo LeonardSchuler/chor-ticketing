@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Protocol
 
-from app.domain.models import Event, PricingMap, Reservation
+from app.domain.models import Event, Order, PricingMap, PurchaseItem, Reservation
 
 
 class EventRepository(Protocol):
@@ -22,12 +22,12 @@ class BookingRepository(Protocol):
     def list_seat_ids(self, event_id: int) -> list[int]: ...
 
     def confirm(
-        self, event_id: int, reservation_ids: list[str], source: str, now: datetime
-    ) -> list[int] | None:
-        """Atomically turn active reservations into bookings.
+        self, event_id: int, items: list[PurchaseItem], source: str, now: datetime
+    ) -> Order | None:
+        """Atomically turn active reservations into bookings grouped in one order.
 
-        Returns the booked seat ids, or None (changing nothing) if any
-        reservation is unknown or expired.
+        Returns the order, or None (changing nothing) if any reservation is
+        unknown or expired.
         """
         ...
 

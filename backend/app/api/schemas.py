@@ -40,5 +40,25 @@ class ReservationIn(CamelModel):
     duration_minutes: int = Field(default=10, ge=1, le=60)
 
 
+class PurchaseItemIn(CamelModel):
+    reservation_id: str
+    price: int = Field(ge=0)
+    discount: float = Field(default=0, ge=0, le=100)
+
+
 class BookingIn(CamelModel):
-    reservation_ids: list[str] = Field(min_length=1)
+    items: list[PurchaseItemIn] = Field(min_length=1)
+
+
+class PurchasedSeatOut(CamelModel):
+    seat_id: int
+    price: int
+    discount: float
+
+
+class OrderOut(CamelModel):
+    id: int
+    event_id: int
+    total: float
+    created_at: datetime
+    seats: list[PurchasedSeatOut]

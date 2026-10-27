@@ -5,6 +5,7 @@ import type {
   ReservationRequest,
   ReservationResponse,
 } from "../models/reservation";
+import type { PurchaseItem } from "../models/booking";
 import type { SeatLayout } from "../infrastructure/svgSeatLayoutAdapter";
 
 export class SeatService {
@@ -180,8 +181,9 @@ export class SeatService {
    * All-or-nothing: fails if any reservation is unknown or has expired.
    */
   async confirmBooking(
-    reservationIds: string[],
-  ): Promise<{ success: boolean; error?: string }> {
+    items: PurchaseItem[],
+  ): Promise<{ success: boolean; orderId?: number; error?: string }> {
+    const reservationIds = items.map((item) => item.reservationId);
     const first = this.reservations.get(reservationIds[0]);
     if (!first) {
       return { success: false, error: "Reservation not found" };
@@ -192,7 +194,7 @@ export class SeatService {
       response = await fetch(`${this.apiBaseUrl}/events/${first.eventId}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reservationIds }),
+        body: JSON.stringify({ items }),
       });
     } catch {
       return { success: false, error: "Backend not reachable" };
@@ -204,12 +206,14 @@ export class SeatService {
         : { success: false, error: `Booking failed (${response.status})` };
     }
 
+    const order = (await response.json()) as { id: number };
+
     reservationIds.forEach((id) => {
       const reservation = this.reservations.get(id);
       if (reservation) this.bookSeat(reservation.seatId);
       this.reservations.delete(id);
     });
-    return { success: true };
+    return { success: true, orderId: order.id };
   }
 
   getReservation(reservationId: string): Reservation | undefined {

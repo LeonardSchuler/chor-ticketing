@@ -3,14 +3,14 @@ import type { SeatCategory } from "../models/seat";
 type PricingMap = { [category in SeatCategory]: number };
 
 export class PricingService {
-  //private concertId: string;
+  //private eventId: string;
   private prices: PricingMap | null = null;
 
-  //constructor(concertId: string) {
-  //  this.concertId = concertId;
+  //constructor(eventId: string) {
+  //  this.eventId = eventId;
   //}
   init(): void {
-    //const res = await fetch(`/api/concerts/${this.concertId}/prices`);
+    //const res = await fetch(`/api/events/${this.eventId}/prices`);
     //this.prices = await res.json();
     this.prices = {
       "cat-1": 55,

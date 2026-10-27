@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd backend && uv run uvicorn app.main:app --reload",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint .",

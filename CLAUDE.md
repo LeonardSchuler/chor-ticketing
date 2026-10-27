@@ -206,6 +206,23 @@ npm run test:ui      # Run tests with UI interface
 npm run test:coverage # Run tests with coverage report
 ```
 
+### Backend (FastAPI)
+
+The `backend/` directory holds a FastAPI app managed with **uv**. For the first iteration it runs locally (single user) on SQLite; the AWS setup below is the later target.
+
+```bash
+npm run dev:backend               # uvicorn on localhost:8000 (Vite proxies /api to it)
+cd backend && uv run pytest       # backend tests
+```
+
+Endpoints (JSON is camelCase to match the frontend models):
+
+- `GET /api/events`, `GET /api/events/{id}`, `GET /api/events/{id}/prices`
+- `GET /api/events/{id}/bookings` (permanently booked seats, `[{"seatId": ...}]`)
+- `GET /api/events/{id}/reservations` (active only), `POST /api/events/{id}/reservations` (body: `seatId`, optional `durationMinutes`; 409 if the seat is held), `DELETE /api/events/{id}/reservations/{reservationId}`
+
+Layers mirror the frontend: `app/api` (routes), `app/application` (use cases), `app/domain` (models, ports), `app/infrastructure` (SQLite repositories). Expired reservations are purged lazily on write and filtered on read. The DB lives in `backend/data/ticketing.db` (override with `TICKETING_DB`). Events and prices come from `backend/seed/events.json`; load them with `cd backend && uv run python -m app.seed` (idempotent upsert keyed on title + date; ids are auto-increment integers, so changing a title or date in the file creates a new event). An event entry may also list `"bookings": ["seat-1630", ...]`; these are additive (inserted if missing, never removed) and stored in the `bookings` table, which blocks reservations for those seats (409).
+
 ### Testing
 
 The project uses **Vitest** with **jsdom** environment for testing:
@@ -277,7 +294,7 @@ The application is deployed to AWS with the following serverless architecture:
 **Implementation Details**:
 
 - Frontend cart operations are immediate and local
-- Backend reserves seats via REST API (POST /reservations)
+- Backend reserves seats via REST API (POST /api/events/{id}/reservations)
 - Reservation includes expiration timestamp (10-15 minutes)
 - Frontend displays countdown timer
 - Backend automatically releases expired reservations

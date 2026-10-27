@@ -1,103 +1,70 @@
 // src/services/event-api-service.ts
 import type { Event } from "../models/event";
+import type { Reservation } from "../models/reservation";
+
+type ApiEvent = Omit<Event, "id"> & { id: number | string };
 
 /**
  * Service for loading event data from the backend API.
- * In the future, this will fetch events from AWS API Gateway + Lambda.
- *
- * For now, returns mock data for development.
  */
 export class EventApiService {
   private apiBaseUrl: string;
 
   constructor(apiBaseUrl: string = "/api") {
-    // Store apiBaseUrl for future use when implementing real API calls
     this.apiBaseUrl = apiBaseUrl;
   }
 
   /**
    * Get a specific event by ID.
-   * TODO: Replace mock with actual API call to AWS API Gateway
-   *
-   * @param eventId - The event ID to fetch
-   * @returns Promise resolving to the Event
    */
   async getEvent(eventId: string): Promise<Event> {
-    // TODO: Replace with actual API call
-    // Example implementation (currently commented out):
-    // const response = await fetch(`${this.apiBaseUrl}/events/${eventId}`);
-    // if (!response.ok) throw new Error(`Failed to load event ${eventId}`);
-    // return await response.json();
-
-    // Mock data for development
-    // Note: apiBaseUrl will be used once real API is implemented
-    console.log(`[EventApiService] Mock mode - apiBaseUrl: ${this.apiBaseUrl}`);
-    return Promise.resolve(this.getMockEvent(eventId));
+    const response = await fetch(`${this.apiBaseUrl}/events/${eventId}`);
+    if (!response.ok) throw new Error(`Failed to load event ${eventId}`);
+    return this.toEvent((await response.json()) as ApiEvent);
   }
 
   /**
    * Get all available events.
-   * TODO: Replace mock with actual API call to AWS API Gateway
-   *
-   * @returns Promise resolving to array of Events
    */
   async getAllEvents(): Promise<Event[]> {
-    // TODO: Replace with actual API call
-    // const response = await fetch(`${this.apiBaseUrl}/events`);
-    // if (!response.ok) throw new Error('Failed to load events');
-    // return await response.json();
-
-    // Mock data for development
-    return Promise.resolve([
-      this.getMockEvent("event-1"),
-      this.getMockEvent("event-2"),
-      this.getMockEvent("event-3"),
-    ]);
+    const response = await fetch(`${this.apiBaseUrl}/events`);
+    if (!response.ok) throw new Error("Failed to load events");
+    const events = (await response.json()) as ApiEvent[];
+    return events.map((e) => this.toEvent(e));
   }
 
   /**
-   * Mock event data for development.
-   * This simulates what the backend API will return.
+   * Get the IDs of permanently booked seats for an event.
    */
-  private getMockEvent(eventId: string): Event {
-    const mockEvents: Record<string, Event> = {
-      "event-1": {
-        id: "event-1",
-        title: "Frühjahrskonzert 2026",
-        date: "2026-05-15",
-        venue: "St Johann Schaffhausen",
-        seatLayoutUrl: "/seats-layout.svg",
-        description:
-          "Unser traditionelles Frühjahrskonzert mit Werken von Bach und Händel",
-        startTime: "19:30",
-        endTime: "21:30",
-      },
-      "event-2": {
-        id: "event-2",
-        title: "Sommerkonzert 2026",
-        date: "2026-07-20",
-        venue: "Konzerthaus Berlin",
-        seatLayoutUrl: "/seats-layout.svg",
-        description: "Sommerliche Chormusik unter freiem Himmel",
-        startTime: "20:00",
-        endTime: "22:00",
-      },
-      "event-3": {
-        id: "event-3",
-        title: "Weihnachtskonzert 2026",
-        date: "2026-12-20",
-        venue: "Dom zu Freiburg",
-        seatLayoutUrl: "/seats-layout.svg",
-        description: "Festliche Weihnachtsmusik für die ganze Familie",
-        startTime: "18:00",
-        endTime: "20:00",
-      },
-    };
+  async getBookedSeatIds(eventId: string): Promise<string[]> {
+    const response = await fetch(`${this.apiBaseUrl}/events/${eventId}/bookings`);
+    if (!response.ok) throw new Error(`Failed to load bookings for event ${eventId}`);
+    const bookings = (await response.json()) as { seatId: string }[];
+    return bookings.map((b) => b.seatId);
+  }
 
-    const event = mockEvents[eventId];
-    if (!event) {
-      throw new Error(`Event with ID '${eventId}' not found`);
-    }
-    return event;
+  /**
+   * Get the active (unexpired) reservations for an event, from all users.
+   */
+  async getActiveReservations(eventId: string): Promise<Reservation[]> {
+    const response = await fetch(`${this.apiBaseUrl}/events/${eventId}/reservations`);
+    if (!response.ok) throw new Error(`Failed to load reservations for event ${eventId}`);
+    const reservations = (await response.json()) as {
+      id: string;
+      seatId: string;
+      createdAt: string;
+      expiresAt: string;
+    }[];
+    return reservations.map((r) => ({
+      id: r.id,
+      seatId: r.seatId,
+      eventId,
+      createdAt: new Date(r.createdAt),
+      expiresAt: new Date(r.expiresAt),
+    }));
+  }
+
+  private toEvent(event: ApiEvent): Event {
+    return { ...event, id: String(event.id) };
   }
 }

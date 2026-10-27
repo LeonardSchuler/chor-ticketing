@@ -138,6 +138,30 @@ class SqliteBookingRepository:
             ).fetchall()
         return [r["seat_id"] for r in rows]
 
+    def confirm(
+        self, event_id: int, reservation_ids: list[str], source: str, now: datetime
+    ) -> list[str] | None:
+        ids = list(dict.fromkeys(reservation_ids))
+        marks = ",".join("?" * len(ids))
+        with self._db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            rows = conn.execute(
+                f"SELECT seat_id FROM reservations WHERE event_id = ?"
+                f" AND expires_at > ? AND id IN ({marks})",
+                (event_id, now.isoformat(), *ids),
+            ).fetchall()
+            if len(rows) != len(ids):
+                conn.execute("ROLLBACK")
+                return None
+            seat_ids = [r["seat_id"] for r in rows]
+            insert_bookings(conn, event_id, seat_ids, source, now)
+            conn.execute(
+                f"DELETE FROM reservations WHERE event_id = ? AND id IN ({marks})",
+                (event_id, *ids),
+            )
+            conn.execute("COMMIT")
+            return seat_ids
+
 
 class SqliteReservationRepository:
     def __init__(self, db: Database):

@@ -6,3 +6,8 @@ class EventNotFound(Exception):
 class SeatUnavailable(Exception):
     def __init__(self, seat_id: str):
         super().__init__(f"Seat '{seat_id}' is not available")
+
+
+class ReservationInvalid(Exception):
+    def __init__(self):
+        super().__init__("One or more reservations are unknown or have expired")

@@ -27,27 +27,31 @@ export class CartController {
   }
 
   private handleSeatReserved(detail: SeatReservedEvent): void {
-    const { seat, expiresAt } = detail;
-
     // Cart was already updated by the use case — just set up the expiration timer
-    const msUntilExpiry = expiresAt.getTime() - Date.now();
-    if (msUntilExpiry > 0) {
-      const timerId = window.setTimeout(() => {
-        this.handleRemoveItem(seat.id);
-      }, msUntilExpiry);
-      this.expirationTimers.set(seat.id, timerId);
-    }
-
+    this.scheduleExpiration(detail.seat.id, detail.expiresAt);
     this.broadcastCartUpdate();
   }
 
-  handleRemoveItem(seatId: string): void {
+  private scheduleExpiration(seatId: string, expiresAt: Date): void {
+    if (this.expirationTimers.has(seatId)) return;
+
+    const msUntilExpiry = expiresAt.getTime() - Date.now();
+    if (msUntilExpiry > 0) {
+      const timerId = window.setTimeout(() => {
+        void this.handleRemoveItem(seatId);
+      }, msUntilExpiry);
+      this.expirationTimers.set(seatId, timerId);
+    }
+  }
+
+  async handleRemoveItem(seatId: string): Promise<void> {
     clearTimeout(this.expirationTimers.get(seatId));
     this.expirationTimers.delete(seatId);
 
-    this.reservationUseCase.releaseSeat(seatId);
-
+    // Cart is updated synchronously inside releaseSeat; only the backend call is awaited
+    const released = this.reservationUseCase.releaseSeat(seatId);
     this.broadcastCartUpdate();
+    await released;
   }
 
   handleUpdateDiscount(seatId: string, discountPercent: number): void {
@@ -59,20 +63,21 @@ export class CartController {
     }
   }
 
-  handleClearCart(): void {
+  async handleClearCart(): Promise<void> {
     this.expirationTimers.forEach((timerId) => clearTimeout(timerId));
     this.expirationTimers.clear();
 
-    this.reservationUseCase.releaseAll();
-
+    const released = this.reservationUseCase.releaseAll();
     this.broadcastCartUpdate();
+    await released;
   }
 
-  handlePurchase(): void {
-    const result = this.orderBookingUseCase.completePurchase();
+  async handlePurchase(): Promise<void> {
+    const result = await this.orderBookingUseCase.completePurchase();
 
     if (!result.success) {
       console.warn('Cannot purchase:', result.error);
+      alert(`Kauf fehlgeschlagen: ${result.error}`);
       return;
     }
 
@@ -91,6 +96,10 @@ export class CartController {
   }
 
   syncCartState(): void {
+    // Items restored from storage have no expiration timer yet
+    this.cartService
+      .getAllItems()
+      .forEach((item) => this.scheduleExpiration(item.seat.id, item.expiresAt));
     this.broadcastCartUpdate();
   }
 

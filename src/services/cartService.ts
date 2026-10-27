@@ -1,8 +1,42 @@
 import type { CartItem, CartSummary } from "../models/cartItem";
 import type { Seat } from "../models/seat";
 
+const STORAGE_KEY = "chor-ticketing:cart";
+
+export interface StoredCartItem {
+  seatId: string;
+  reservationId: string;
+  discount: number;
+}
+
 export class CartService {
   private items: Map<string, CartItem> = new Map();
+
+  /**
+   * Read the cart persisted by a previous page load. Only identifiers are
+   * stored; the caller reconciles them against the backend's active reservations.
+   */
+  loadStored(): StoredCartItem[] {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+      return Array.isArray(parsed) ? (parsed as StoredCartItem[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  persist(): void {
+    const stored: StoredCartItem[] = this.getAllItems().map((item) => ({
+      seatId: item.seat.id,
+      reservationId: item.reservationId,
+      discount: item.discount,
+    }));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    } catch {
+      // Storage unavailable (private mode / quota): cart simply won't survive a reload
+    }
+  }
 
   addItem(
     seat: Seat,
@@ -20,12 +54,14 @@ export class CartService {
     };
 
     this.items.set(seat.id, item);
+    this.persist();
   }
 
   removeItem(seatId: string): CartItem | undefined {
     const item = this.items.get(seatId);
     if (item) {
       this.items.delete(seatId);
+      this.persist();
     }
     return item;
   }
@@ -48,12 +84,14 @@ export class CartService {
 
     item.discount = discountPercent;
     this.items.set(seatId, item);
+    this.persist();
     return true;
   }
 
   clear(): CartItem[] {
     const items = this.getAllItems();
     this.items.clear();
+    this.persist();
     return items;
   }
 

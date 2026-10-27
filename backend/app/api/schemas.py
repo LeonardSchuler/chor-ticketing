@@ -38,3 +38,7 @@ class BookingOut(CamelModel):
 class ReservationIn(CamelModel):
     seat_id: str = Field(min_length=1)
     duration_minutes: int = Field(default=15, ge=1, le=60)
+
+
+class BookingIn(CamelModel):
+    reservation_ids: list[str] = Field(min_length=1)

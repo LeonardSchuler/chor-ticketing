@@ -68,7 +68,6 @@ describe("EventSelectionUseCase", () => {
   });
 
   afterEach(() => {
-    localStorage.clear();
     window.history.replaceState({}, "", window.location.pathname);
   });
 
@@ -82,21 +81,9 @@ describe("EventSelectionUseCase", () => {
       expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-2");
       expect(event).toEqual(anotherMockEvent);
       expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(anotherMockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-2");
     });
 
-    it("should load event from localStorage when no URL parameter", async () => {
-      localStorage.setItem("lastViewedEventId", "event-1");
-      vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
-
-      const { event } = await useCase.initializeEvent();
-
-      expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
-      expect(event).toEqual(mockEvent);
-      expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(mockEvent);
-    });
-
-    it("should load first available event when no URL parameter or localStorage", async () => {
+    it("should load first available event when no URL parameter", async () => {
       vi.mocked(mockEventApiService.getAllEvents).mockResolvedValue([mockEvent, anotherMockEvent]);
       vi.mocked(mockEventApiService.getEvent).mockResolvedValue(mockEvent);
 
@@ -106,7 +93,6 @@ describe("EventSelectionUseCase", () => {
       expect(mockEventApiService.getEvent).toHaveBeenCalledWith("event-1");
       expect(event).toEqual(mockEvent);
       expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(mockEvent);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-1");
     });
 
     it("should throw error when no events available", async () => {
@@ -139,7 +125,6 @@ describe("EventSelectionUseCase", () => {
       expect(mockEventContextService.setCurrentEvent).toHaveBeenCalledWith(mockEvent);
       expect(event).toEqual(mockEvent);
       expect(svgElement).toBe(mockSvgElement);
-      expect(localStorage.getItem("lastViewedEventId")).toBe("event-1");
     });
 
     it("should return svgElement from seat layout adapter", async () => {

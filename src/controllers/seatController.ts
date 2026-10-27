@@ -14,10 +14,10 @@ export class SeatController {
     this.reservationUseCase = reservationUseCase;
   }
 
-  handleSeatSelection(seatNumber: string): void {
+  async handleSeatSelection(seatNumber: string): Promise<void> {
     const seatId = `seat-${seatNumber}`;
 
-    const result = this.reservationUseCase.reserveSeat(seatId);
+    const result = await this.reservationUseCase.reserveSeat(seatId);
 
     if (result.success && result.seat && result.reservationId && result.expiresAt) {
       window.dispatchEvent(

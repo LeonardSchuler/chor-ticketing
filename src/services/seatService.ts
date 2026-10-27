@@ -13,7 +13,10 @@ export class SeatService {
   private cleanupIntervalId?: number;
   private currentEventId: string = "";
 
-  constructor() {
+  private apiBaseUrl: string;
+
+  constructor(apiBaseUrl: string = "/api") {
+    this.apiBaseUrl = apiBaseUrl;
     this.startCleanupInterval();
   }
 
@@ -56,24 +59,45 @@ export class SeatService {
   }
 
   /**
-   * Reserve a seat for the current event.
+   * Mark seats as permanently booked (e.g. from the backend bookings list).
+   */
+  markBooked(seatIds: string[]): void {
+    seatIds.forEach((id) => this.bookSeat(id));
+  }
+
+  /**
+   * Mark free seats as reserved (e.g. held by other users, from the backend).
+   */
+  markReserved(seatIds: string[]): void {
+    seatIds.forEach((id) => {
+      const seat = this.seats.get(id);
+      if (seat && seat.status === SeatStatus.FREE) seat.status = SeatStatus.RESERVED;
+    });
+  }
+
+  /**
+   * Re-register a reservation made by this client in an earlier page load.
+   */
+  restoreReservation(reservation: Reservation): void {
+    const seat = this.seats.get(reservation.seatId);
+    if (!seat) return;
+    seat.status = SeatStatus.RESERVED;
+    this.reservations.set(reservation.id, reservation);
+  }
+
+  /**
+   * Reserve a seat for the current event via the backend.
    * @param request - Reservation request with seatId and optional eventId
    */
-  reserveSeat(request: ReservationRequest): ReservationResponse {
+  async reserveSeat(request: ReservationRequest): Promise<ReservationResponse> {
     const seat = this.seats.get(request.seatId);
 
     if (!seat) {
-      return {
-        success: false,
-        error: "Seat not found",
-      };
+      return { success: false, error: "Seat not found" };
     }
 
     if (seat.status !== SeatStatus.FREE) {
-      return {
-        success: false,
-        error: "Seat is not available",
-      };
+      return { success: false, error: "Seat is not available" };
     }
 
     const eventId = request.eventId ?? this.currentEventId;
@@ -85,30 +109,50 @@ export class SeatService {
       };
     }
 
-    const durationMinutes = request.durationMinutes || 15;
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + durationMinutes * 60 * 1000);
+    let response: Response;
+    try {
+      response = await fetch(`${this.apiBaseUrl}/events/${eventId}/reservations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seatId: request.seatId,
+          durationMinutes: request.durationMinutes || 15,
+        }),
+      });
+    } catch {
+      return { success: false, error: "Backend not reachable" };
+    }
 
+    if (!response.ok) {
+      if (response.status === 409) {
+        // Held or booked by someone else
+        seat.status = SeatStatus.BOOKED;
+        return { success: false, error: "Seat is not available" };
+      }
+      return { success: false, error: `Reservation failed (${response.status})` };
+    }
+
+    const data = (await response.json()) as {
+      id: string;
+      seatId: string;
+      createdAt: string;
+      expiresAt: string;
+    };
     const reservation: Reservation = {
-      id: `res-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      seatId: request.seatId,
+      id: data.id,
+      seatId: data.seatId,
       eventId,
-      createdAt: now,
-      expiresAt,
+      createdAt: new Date(data.createdAt),
+      expiresAt: new Date(data.expiresAt),
     };
 
     seat.status = SeatStatus.RESERVED;
-    this.seats.set(seat.id, seat);
     this.reservations.set(reservation.id, reservation);
 
-    return {
-      success: true,
-      reservation,
-      seat,
-    };
+    return { success: true, reservation, seat };
   }
 
-  releaseReservation(reservationId: string): boolean {
+  async releaseReservation(reservationId: string): Promise<boolean> {
     const reservation = this.reservations.get(reservationId);
     if (!reservation) {
       return false;
@@ -117,11 +161,55 @@ export class SeatService {
     const seat = this.seats.get(reservation.seatId);
     if (seat && seat.status === SeatStatus.RESERVED) {
       seat.status = SeatStatus.FREE;
-      this.seats.set(seat.id, seat);
+    }
+    this.reservations.delete(reservationId);
+
+    try {
+      await fetch(
+        `${this.apiBaseUrl}/events/${reservation.eventId}/reservations/${reservationId}`,
+        { method: "DELETE" },
+      );
+    } catch {
+      // Backend purges expired reservations itself; local state is already released
+    }
+    return true;
+  }
+
+  /**
+   * Turn active reservations into permanent bookings via the backend.
+   * All-or-nothing: fails if any reservation is unknown or has expired.
+   */
+  async confirmBooking(
+    reservationIds: string[],
+  ): Promise<{ success: boolean; error?: string }> {
+    const first = this.reservations.get(reservationIds[0]);
+    if (!first) {
+      return { success: false, error: "Reservation not found" };
     }
 
-    this.reservations.delete(reservationId);
-    return true;
+    let response: Response;
+    try {
+      response = await fetch(`${this.apiBaseUrl}/events/${first.eventId}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservationIds }),
+      });
+    } catch {
+      return { success: false, error: "Backend not reachable" };
+    }
+
+    if (!response.ok) {
+      return response.status === 409
+        ? { success: false, error: "Reservation expired" }
+        : { success: false, error: `Booking failed (${response.status})` };
+    }
+
+    reservationIds.forEach((id) => {
+      const reservation = this.reservations.get(id);
+      if (reservation) this.bookSeat(reservation.seatId);
+      this.reservations.delete(id);
+    });
+    return { success: true };
   }
 
   getReservation(reservationId: string): Reservation | undefined {
@@ -145,7 +233,7 @@ export class SeatService {
     });
 
     expiredReservations.forEach((reservationId) => {
-      this.releaseReservation(reservationId);
+      void this.releaseReservation(reservationId);
     });
   }
 
@@ -155,8 +243,7 @@ export class SeatService {
     }
   }
 
-  // For testing/development - mark seat as booked
-  bookSeat(seatId: string): boolean {
+  private bookSeat(seatId: string): boolean {
     const seat = this.seats.get(seatId);
     if (!seat) return false;
 

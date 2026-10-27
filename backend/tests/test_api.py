@@ -143,3 +143,27 @@ def test_list_bookings(client):
     assert res.json() == [{"seatId": "seat-9001"}, {"seatId": "seat-9002"}]
     assert client.get("/api/events/2/bookings").json() == []
     assert client.get("/api/events/999/bookings").status_code == 404
+
+
+def test_confirm_booking_consumes_reservations(client):
+    res = client.post("/api/events/1/reservations", json={"seatId": "seat-10"})
+    rid = res.json()["id"]
+    other = client.post("/api/events/1/reservations", json={"seatId": "seat-11"}).json()["id"]
+
+    done = client.post("/api/events/1/bookings", json={"reservationIds": [rid, other]})
+    assert done.status_code == 201
+    assert sorted(b["seatId"] for b in done.json()) == ["seat-10", "seat-11"]
+    assert {"seatId": "seat-10"} in client.get("/api/events/1/bookings").json()
+    assert client.get("/api/events/1/reservations").json() == []
+    # Seat is now permanently taken
+    assert client.post("/api/events/1/reservations", json={"seatId": "seat-10"}).status_code == 409
+
+
+def test_confirm_booking_is_all_or_nothing(client):
+    rid = client.post("/api/events/1/reservations", json={"seatId": "seat-20"}).json()["id"]
+    res = client.post("/api/events/1/bookings", json={"reservationIds": [rid, "res-nope"]})
+    assert res.status_code == 409
+    assert {"seatId": "seat-20"} not in client.get("/api/events/1/bookings").json()
+    assert len(client.get("/api/events/1/reservations").json()) == 1
+    assert client.post("/api/events/1/bookings", json={"reservationIds": []}).status_code == 422
+    assert client.post("/api/events/999/bookings", json={"reservationIds": [rid]}).status_code == 404

@@ -78,6 +78,20 @@ export class SeatsMap extends HTMLElement {
   }
 
   /**
+   * Public API: Mark seats (by venue seat number) as permanently booked.
+   */
+  public markBooked(seatNumbers: string[]) {
+    this.shadowRoot?.querySelectorAll(".seat").forEach((seat) => {
+      const seatEl = seat as HTMLElement;
+      const seatNumber = seatEl.getAttribute("data-number");
+      if (seatNumber && seatNumbers.includes(seatNumber)) {
+        seatEl.classList.remove("seat");
+        seatEl.classList.add("seat-booked");
+      }
+    });
+  }
+
+  /**
    * Public API: Initialize the seat map with SVG layout
    * This should be called by the app after the component is mounted
    * @param svgElement - The SVG element containing the seat layout

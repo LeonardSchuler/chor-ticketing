@@ -14,11 +14,10 @@ export type EventSelectionResult = {
  * Use case for selecting and initializing the active event.
  *
  * Orchestrates event ID resolution, loading event data and seat layout from
- * their respective adapters, initializing the seat service, updating the event
- * context, and persisting the last viewed event.
+ * their respective adapters, initializing the seat service, and updating the event
+ * context.
  */
 export class EventSelectionUseCase {
-  private readonly STORAGE_KEY = "lastViewedEventId";
   private eventApiService: EventApiService;
   private eventContextService: EventContextService;
   private seatLayoutAdapter: SvgSeatLayoutAdapter;
@@ -39,39 +38,40 @@ export class EventSelectionUseCase {
   /**
    * Initialize the active event based on priority:
    * 1. URL parameter (?eventId=...)
-   * 2. localStorage (last viewed event)
-   * 3. First available event from API
+   * 2. First available event from API (also used if the URL id is unknown)
+   *
+   * The resolved event id is written back to the URL.
    */
   async initializeEvent(): Promise<EventSelectionResult> {
-    const eventId = await this.determineEventId();
-    return this.selectEvent(eventId);
+    const urlEventId = this.readEventIdFromUrl();
+    let result: EventSelectionResult;
+    if (urlEventId) {
+      try {
+        result = await this.selectEvent(urlEventId);
+      } catch (error) {
+        console.warn(`Event '${urlEventId}' not found, falling back to first event`, error);
+        result = await this.selectEvent(await this.firstEventId());
+      }
+    } else {
+      result = await this.selectEvent(await this.firstEventId());
+    }
+    this.writeEventIdToUrl(result.event.id);
+    return result;
   }
 
   /**
    * Select a specific event by ID: load event data and seat layout,
-   * initialize seats, update context, and persist the choice.
+   * initialize seats, and update context.
    */
   async selectEvent(eventId: string): Promise<EventSelectionResult> {
     const event = await this.eventApiService.getEvent(eventId);
     const { seats, svgElement } = await this.seatLayoutAdapter.load(event.seatLayoutUrl);
     this.seatService.initializeSeats(seats, event.id);
     this.eventContextService.setCurrentEvent(event);
-    this.saveLastViewedEventId(event.id);
     return { event, svgElement };
   }
 
-  private async determineEventId(): Promise<string> {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlEventId = urlParams.get("eventId");
-    if (urlEventId) {
-      return urlEventId;
-    }
-
-    const lastEventId = localStorage.getItem(this.STORAGE_KEY);
-    if (lastEventId) {
-      return lastEventId;
-    }
-
+  private async firstEventId(): Promise<string> {
     const events = await this.eventApiService.getAllEvents();
     if (events.length === 0) {
       throw new Error("No events available");
@@ -79,7 +79,19 @@ export class EventSelectionUseCase {
     return events[0].id;
   }
 
-  private saveLastViewedEventId(eventId: string): void {
-    localStorage.setItem(this.STORAGE_KEY, eventId);
+  private readEventIdFromUrl(): string | null {
+    for (const [key, value] of new URLSearchParams(window.location.search)) {
+      if (key.toLowerCase() === "eventid" && value) return value;
+    }
+    return null;
+  }
+
+  private writeEventIdToUrl(eventId: string): void {
+    const url = new URL(window.location.href);
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase() === "eventid") url.searchParams.delete(key);
+    }
+    url.searchParams.set("eventId", eventId);
+    window.history.replaceState({}, "", url);
   }
 }

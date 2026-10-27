@@ -21,6 +21,16 @@ class BookingRepository(Protocol):
 
     def list_seat_ids(self, event_id: int) -> list[str]: ...
 
+    def confirm(
+        self, event_id: int, reservation_ids: list[str], source: str, now: datetime
+    ) -> list[str] | None:
+        """Atomically turn active reservations into bookings.
+
+        Returns the booked seat ids, or None (changing nothing) if any
+        reservation is unknown or expired.
+        """
+        ...
+
 
 class ReservationRepository(Protocol):
     def list_active(self, event_id: int, now: datetime) -> list[Reservation]:

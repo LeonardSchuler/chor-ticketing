@@ -29,12 +29,15 @@ export class App {
     const seatService = new SeatService();
     const cartService = new CartService();
     const pricingService = new PricingService();
-    pricingService.init();
 
     // 3. Initialize and load the event (resolves event, loads seat layout, initializes seats)
     const seatLayoutAdapter = new SvgSeatLayoutAdapter();
     const eventSelectionUseCase = new EventSelectionUseCase(eventApiService, eventContextService, seatLayoutAdapter, seatService);
     const { event, svgElement } = await eventSelectionUseCase.initializeEvent();
+
+    await pricingService.init(event.id);
+    seatService.markBooked(await eventApiService.getBookedSeatIds(event.id));
+    const activeReservations = await eventApiService.getActiveReservations(event.id);
 
     console.log(`📅 Loaded event: ${event.title}`);
     console.log(`📍 Venue: ${event.venue}`);
@@ -42,7 +45,11 @@ export class App {
 
     // 4. Initialize Use Cases
     const seatReservationUC = new SeatReservationUseCase(seatService, cartService, pricingService);
-    const orderBookingUC = new OrderBookingUseCase(cartService);
+    const orderBookingUC = new OrderBookingUseCase(cartService, seatService);
+
+    // Restore this client's cart; remaining active reservations belong to others
+    seatReservationUC.restoreCart(activeReservations);
+    seatService.markReserved(activeReservations.map((r) => r.seatId));
 
     // 5. Initialize Controllers
     const seatController = new SeatController(seatReservationUC);
@@ -68,6 +75,9 @@ export class App {
     const seatsMapElement = appRoot.querySelector('seats-map') as SeatsMap;
     if (seatsMapElement) {
       seatsMapElement.init(svgElement);
+      seatsMapElement.markBooked(
+        seatService.getAllSeats().filter((s) => s.status !== 'free' && !cartService.hasItem(s.id)).map((s) => s.number),
+      );
     }
 
     // 8. Wire up global event listeners
@@ -85,21 +95,21 @@ export class App {
     // Listen to seat selection events from SeatsMap
     window.addEventListener('seat-selected', ((event: CustomEvent) => {
       const detail = event.detail as { seatNumber: string };
-      seatController.handleSeatSelection(detail.seatNumber);
+      void seatController.handleSeatSelection(detail.seatNumber);
     }) as EventListener);
 
     // Listen to cart events from CartPanel
     window.addEventListener('cart-item-remove', ((event: CustomEvent) => {
       const detail = event.detail as { seatId: string };
-      cartController.handleRemoveItem(detail.seatId);
+      void cartController.handleRemoveItem(detail.seatId);
     }) as EventListener);
 
     window.addEventListener('cart-clear', () => {
-      cartController.handleClearCart();
+      void cartController.handleClearCart();
     });
 
     window.addEventListener('cart-purchase', () => {
-      cartController.handlePurchase();
+      void cartController.handlePurchase();
     });
 
     window.addEventListener('cart-item-discount-update', ((event: CustomEvent) => {

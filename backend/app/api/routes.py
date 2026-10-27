@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
-from app.api.schemas import BookingOut, EventOut, ReservationIn, ReservationOut
+from app.api.schemas import BookingIn, BookingOut, EventOut, ReservationIn, ReservationOut
 from app.application.bookings import BookingUseCases
 from app.application.events import EventUseCases
 from app.application.reservations import ReservationUseCases
-from app.domain.errors import EventNotFound, SeatUnavailable
+from app.domain.errors import EventNotFound, ReservationInvalid, SeatUnavailable
 from app.domain.models import PricingMap
 
 router = APIRouter(prefix="/api")
@@ -50,6 +50,20 @@ def list_bookings(
     event_id: int, uc: BookingUseCases = Depends(get_booking_use_cases)
 ):
     return [BookingOut(seat_id=s) for s in uc.list_booked_seat_ids(event_id)]
+
+
+@router.post(
+    "/events/{event_id}/bookings",
+    response_model=list[BookingOut],
+    response_model_by_alias=True,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_bookings(
+    event_id: int,
+    body: BookingIn,
+    uc: BookingUseCases = Depends(get_booking_use_cases),
+):
+    return [BookingOut(seat_id=s) for s in uc.confirm(event_id, body.reservation_ids)]
 
 
 @router.get(
@@ -100,4 +114,8 @@ def register_exception_handlers(app) -> None:
 
     @app.exception_handler(SeatUnavailable)
     async def _seat_unavailable(_: Request, exc: SeatUnavailable):
+        return JSONResponse({"detail": str(exc)}, status_code=409)
+
+    @app.exception_handler(ReservationInvalid)
+    async def _reservation_invalid(_: Request, exc: ReservationInvalid):
         return JSONResponse({"detail": str(exc)}, status_code=409)

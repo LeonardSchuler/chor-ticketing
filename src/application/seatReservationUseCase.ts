@@ -2,6 +2,7 @@ import { SeatService } from "../services/seatService";
 import { CartService } from "../services/cartService";
 import { PricingService } from "../services/pricingService";
 import type { Seat } from "../models/seat";
+import type { Reservation } from "../models/reservation";
 
 export interface ReserveSeatResult {
   success: boolean;
@@ -26,8 +27,11 @@ export class SeatReservationUseCase {
     this.pricingService = pricingService;
   }
 
-  reserveSeat(seatId: string, durationMinutes: number = 15): ReserveSeatResult {
-    const response = this.seatService.reserveSeat({ seatId, durationMinutes });
+  async reserveSeat(
+    seatId: string,
+    durationMinutes: number = 15,
+  ): Promise<ReserveSeatResult> {
+    const response = await this.seatService.reserveSeat({ seatId, durationMinutes });
 
     if (!response.success || !response.reservation || !response.seat) {
       console.warn(`Failed to reserve seat ${seatId}: ${response.error}`);
@@ -50,16 +54,44 @@ export class SeatReservationUseCase {
     };
   }
 
-  releaseSeat(seatId: string): void {
+  /**
+   * Rebuild the cart persisted by an earlier page load. Only items whose
+   * reservation is still active on the backend are restored.
+   */
+  restoreCart(activeReservations: Reservation[]): void {
+    const active = new Map(activeReservations.map((r) => [r.id, r]));
+
+    this.cartService.loadStored().forEach((stored) => {
+      const reservation = active.get(stored.reservationId);
+      const seat = this.seatService.getSeat(stored.seatId);
+      if (!reservation || !seat || reservation.seatId !== seat.id) return;
+
+      this.seatService.restoreReservation(reservation);
+      this.cartService.addItem(
+        seat,
+        this.pricingService.getPrice(seat.category),
+        reservation.id,
+        reservation.expiresAt,
+      );
+      if (stored.discount >= 0 && stored.discount <= 100) {
+        this.cartService.updateDiscount(seat.id, stored.discount);
+      }
+    });
+
+    // Drop stale entries (expired or released) from storage
+    this.cartService.persist();
+  }
+
+  async releaseSeat(seatId: string): Promise<void> {
     const item = this.cartService.removeItem(seatId);
     if (item) {
-      this.seatService.releaseReservation(item.reservationId);
+      await this.seatService.releaseReservation(item.reservationId);
     }
   }
 
-  releaseAll(): void {
+  async releaseAll(): Promise<void> {
     const items = this.cartService.clear();
-    items.forEach((item) => this.seatService.releaseReservation(item.reservationId));
+    await Promise.all(items.map((item) => this.seatService.releaseReservation(item.reservationId)));
   }
 
   getAllSeats(eventId?: string): Seat[] {

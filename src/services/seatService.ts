@@ -116,7 +116,7 @@ export class SeatService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           seatId: Number(seat.number),
-          durationMinutes: request.durationMinutes || 15,
+          durationMinutes: request.durationMinutes || 10,
         }),
       });
     } catch {

@@ -37,7 +37,7 @@ class BookingOut(CamelModel):
 
 class ReservationIn(CamelModel):
     seat_id: int = Field(ge=1)
-    duration_minutes: int = Field(default=15, ge=1, le=60)
+    duration_minutes: int = Field(default=10, ge=1, le=60)
 
 
 class BookingIn(CamelModel):

@@ -6,7 +6,7 @@ from app.domain.errors import EventNotFound, SeatUnavailable
 from app.domain.models import Reservation
 from app.domain.ports import EventRepository, ReservationRepository
 
-DEFAULT_DURATION_MINUTES = 15
+DEFAULT_DURATION_MINUTES = 10
 
 
 def _utcnow() -> datetime:

@@ -29,7 +29,7 @@ export class SeatReservationUseCase {
 
   async reserveSeat(
     seatId: string,
-    durationMinutes: number = 15,
+    durationMinutes: number = 10,
   ): Promise<ReserveSeatResult> {
     const response = await this.seatService.reserveSeat({ seatId, durationMinutes });
 

@@ -6,6 +6,7 @@ Idempotent: events are upserted by their "id" and their prices replaced, so you 
 edit the file and re-run it. Events and prices are overwritten from the file. Bookings listed under an
 event's "bookings" key are additive: missing seats are inserted, nothing is
 ever updated or removed, so real bookings made later survive a re-seed.
+Bookings from the gitignored seed/bookings.local.json ({"<eventId>": [seatId, ...]}) are merged in the same way.
 Existing reservations are left untouched.
 """
 
@@ -17,10 +18,26 @@ from pathlib import Path
 from app.infrastructure.sqlite import Database, insert_bookings
 
 DEFAULT_SEED_FILE = Path(__file__).resolve().parents[1] / "seed" / "events.json"
+# Gitignored file next to the events file, holds real customer bookings:
+# {"<eventId>": [seatId, ...]}
+LOCAL_BOOKINGS_NAME = "bookings.local.json"
 
 
-def load(db: Database, path: str | Path = DEFAULT_SEED_FILE) -> int:
+def _local_bookings(path: Path) -> dict[int, list[int]]:
+    if not path.exists():
+        return {}
+    return {int(k): v for k, v in json.loads(path.read_text(encoding="utf-8")).items()}
+
+
+def load(
+    db: Database,
+    path: str | Path = DEFAULT_SEED_FILE,
+    bookings_path: str | Path | None = None,
+) -> int:
     entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    local = _local_bookings(
+        Path(bookings_path) if bookings_path else Path(path).with_name(LOCAL_BOOKINGS_NAME)
+    )
     db.init()
     with db.connect() as conn:
         conn.execute("BEGIN")
@@ -57,7 +74,11 @@ def load(db: Database, path: str | Path = DEFAULT_SEED_FILE) -> int:
                 [(event_id, int(c), p) for c, p in e["prices"].items()],
             )
             insert_bookings(
-                conn, event_id, e.get("bookings", []), "seed", datetime.now(UTC)
+                conn,
+                event_id,
+                [*e.get("bookings", []), *local.get(event_id, [])],
+                "seed",
+                datetime.now(UTC),
             )
         conn.execute("COMMIT")
     return len(entries)

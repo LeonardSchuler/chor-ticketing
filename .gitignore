@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .env
+# Real customer bookings
+backend/seed/bookings.local.json

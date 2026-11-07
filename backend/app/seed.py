@@ -36,7 +36,9 @@ def load(
 ) -> int:
     entries = json.loads(Path(path).read_text(encoding="utf-8"))
     local = _local_bookings(
-        Path(bookings_path) if bookings_path else Path(path).with_name(LOCAL_BOOKINGS_NAME)
+        Path(bookings_path)
+        if bookings_path
+        else Path(path).with_name(LOCAL_BOOKINGS_NAME)
     )
     db.init()
     with db.connect() as conn:
@@ -77,7 +79,7 @@ def load(
                 conn,
                 event_id,
                 [*e.get("bookings", []), *local.get(event_id, [])],
-                "seed",
+                "presale",
                 datetime.now(UTC),
             )
         conn.execute("COMMIT")

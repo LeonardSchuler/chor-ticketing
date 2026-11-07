@@ -16,7 +16,7 @@ class BookingRepository(Protocol):
     def add_many(
         self, event_id: int, seat_ids: list[int], source: str, now: datetime
     ) -> int:
-        """Insert bookings for seats not yet booked; returns how many were added."""
+        """Insert bookings, refreshing source and created_at for seats already booked; returns rows written."""
         ...
 
     def list_seat_ids(self, event_id: int) -> list[int]: ...

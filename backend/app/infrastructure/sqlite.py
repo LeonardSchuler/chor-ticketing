@@ -94,16 +94,21 @@ def insert_bookings(
     source: str,
     now: datetime,
 ) -> int:
-    """Insert missing bookings, ignoring seats already booked. Returns rows added."""
-    added = 0
+    """Insert bookings; for seats already booked, refresh source and created_at.
+
+    Returns rows written (inserted or updated).
+    """
+    written = 0
     for seat_id in dict.fromkeys(seat_ids):
         cursor = conn.execute(
-            "INSERT OR IGNORE INTO bookings (event_id, seat_id, source, created_at)"
-            " VALUES (?, ?, ?, ?)",
+            "INSERT INTO bookings (event_id, seat_id, source, created_at)"
+            " VALUES (?, ?, ?, ?)"
+            " ON CONFLICT(event_id, seat_id) DO UPDATE SET"
+            " source = excluded.source, created_at = excluded.created_at",
             (event_id, seat_id, source, now.isoformat()),
         )
-        added += cursor.rowcount
-    return added
+        written += cursor.rowcount
+    return written
 
 
 def _event_from_row(row: sqlite3.Row) -> Event:

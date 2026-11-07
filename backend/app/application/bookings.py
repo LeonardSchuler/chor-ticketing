@@ -27,7 +27,7 @@ class BookingUseCases:
 
     def confirm(self, event_id: int, items: list[PurchaseItem]) -> Order:
         self._require_event(event_id)
-        order = self._bookings.confirm(event_id, items, "purchase", self._clock())
+        order = self._bookings.confirm(event_id, items, "box office", self._clock())
         if order is None:
             raise ReservationInvalid()
         return order

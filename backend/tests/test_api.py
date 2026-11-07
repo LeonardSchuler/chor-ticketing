@@ -132,9 +132,29 @@ def test_booking_seed_is_additive(tmp_path):
     assert repo.list_seat_ids(1) == [9001, 9002]
 
     # A booking made later survives a re-seed
-    assert repo.add_many(1, [5, 9001], "api", datetime.now(UTC)) == 1
+    assert repo.add_many(1, [5, 9001], "api", datetime.now(UTC)) == 2
     load(db, FIXTURE)
     assert repo.list_seat_ids(1) == [5, 9001, 9002]
+
+
+def test_rebooking_refreshes_source_and_created_at(tmp_path):
+    from datetime import UTC, datetime, timedelta
+
+    from app.infrastructure.sqlite import SqliteBookingRepository
+
+    db = Database(tmp_path / "b.db")
+    repo = SqliteBookingRepository(db)
+    load(db, FIXTURE)
+    later = datetime.now(UTC) + timedelta(days=1)
+    repo.add_many(1, [9001], "api", later)
+    with db.connect() as conn:
+        rows = conn.execute(
+            "SELECT seat_id, source, created_at FROM bookings WHERE event_id = 1"
+        ).fetchall()
+    by_seat = {r["seat_id"]: r for r in rows}
+    assert by_seat[9001]["source"] == "api"
+    assert by_seat[9001]["created_at"] == later.isoformat()
+    assert by_seat[9002]["source"] == "presale"
 
 
 def test_list_bookings(client):

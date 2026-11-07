@@ -20,7 +20,6 @@
 /* FREE */
 .seat.cat-1 .seat-box {
   fill: var(--cat-1-free);
-  stroke: #4ade80;
 }
 
 .seat.cat-1 .seat-label {
@@ -30,7 +29,6 @@
 /* RESERVED */
 .seat-reserved.cat-1 .seat-box {
   fill: #22c55e;
-  stroke: #16a34a;
 }
 
 .seat-reserved.cat-1 .seat-label {

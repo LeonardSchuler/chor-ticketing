@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import register_exception_handlers, router
 from app.application.bookings import BookingUseCases
@@ -15,6 +16,7 @@ from app.infrastructure.sqlite import (
 )
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "data" / "ticketing.db"
+DIST_DIR = Path(__file__).resolve().parents[2] / "dist"
 
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
@@ -32,6 +34,9 @@ def create_app(db_path: str | Path | None = None) -> FastAPI:
     app.state.reservation_use_cases = ReservationUseCases(events, reservations)
     register_exception_handlers(app)
     app.include_router(router)
+    # Mounted last: a mount at "/" matches everything, so it must not shadow the API routes.
+    if DIST_DIR.is_dir():
+        app.mount("/", StaticFiles(directory=DIST_DIR, html=True), name="frontend")
     return app
 
 

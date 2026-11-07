@@ -19,8 +19,8 @@
 
 /* FREE */
 .seat.cat-1 .seat-box {
-  fill: #ffffff;
-  stroke: #9ca3af;
+  fill: #86efac;
+  stroke: #4ade80;
 }
 
 .seat.cat-1 .seat-label {
@@ -29,8 +29,8 @@
 
 /* RESERVED */
 .seat-reserved.cat-1 .seat-box {
-  fill: #9ca3af;
-  stroke: #6b7280;
+  fill: #22c55e;
+  stroke: #16a34a;
 }
 
 .seat-reserved.cat-1 .seat-label {
@@ -39,7 +39,7 @@
 
 /* BOOKED */
 .seat-booked.cat-1 .seat-box {
-  fill: #6b7280;
+  fill: #166534;
 }
 
 .seat-booked.cat-1 .seat-label {

@@ -12,6 +12,7 @@ import { EventApiService } from './services/eventApiService';
 import { SvgSeatLayoutAdapter } from './infrastructure/svgSeatLayoutAdapter';
 import { SeatsMap } from './components/SeatsMap';
 import { CartPanel } from './components/CartPanel';
+import { PriceLegend } from './components/PriceLegend';
 
 export class App {
   async bootstrap() {
@@ -21,6 +22,10 @@ export class App {
     }
     if (!customElements.get('cart-panel')) {
       customElements.define('cart-panel', CartPanel);
+    }
+
+    if (!customElements.get('price-legend')) {
+      customElements.define('price-legend', PriceLegend);
     }
 
     // 2. Initialize services
@@ -69,8 +74,9 @@ export class App {
   <div class="flex-1">
     <seats-map></seats-map>
   </div>
-  <div class="w-full lg:w-96">
+  <div class="w-full lg:w-96 flex flex-col">
     <cart-panel></cart-panel>
+    <price-legend class="mt-auto"></price-legend>
   </div>
 </div>
     `;
@@ -86,6 +92,9 @@ export class App {
           .map((s) => s.number)
       );
     }
+
+    const priceLegendElement = appRoot.querySelector('price-legend') as PriceLegend;
+    priceLegendElement.prices = pricingService.getAll();
 
     // 8. Wire up global event listeners
     this.setupEventListeners(seatController, cartController);

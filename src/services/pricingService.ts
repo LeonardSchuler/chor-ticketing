@@ -25,4 +25,9 @@ export class PricingService {
     if (!this.prices) throw new Error("PricingService not initialized");
     return this.prices[category];
   }
+
+  getAll(): Partial<PricingMap> {
+    if (!this.prices) throw new Error("PricingService not initialized");
+    return { ...this.prices };
+  }
 }

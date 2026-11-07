@@ -229,7 +229,7 @@ def draw_row(
 
 
 print(
-    '<svg id="seats" width="1200" height="auto" viewBox="150 0 2000 2000" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">'
+    '<svg id="seats" width="1200" height="auto" viewBox="110 0 2050 1610" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">'
 )
 
 EINGANG = 4 * [None]

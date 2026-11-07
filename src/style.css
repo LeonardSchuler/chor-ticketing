@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Free-seat colors per price category; shared by the seat map and the price legend */
+:root {
+  --cat-1-free: #86efac;
+  --cat-2-free: #fde68a;
+  --cat-3-free: #60a5fa;
+  --cat-4-free: #6ee7b7;
+}
+
 /* Global styles - using Tailwind utilities directly in HTML is preferred */
 body {
   margin: 0;

@@ -32,7 +32,12 @@ export class App {
 
     // 3. Initialize and load the event (resolves event, loads seat layout, initializes seats)
     const seatLayoutAdapter = new SvgSeatLayoutAdapter();
-    const eventSelectionUseCase = new EventSelectionUseCase(eventApiService, eventContextService, seatLayoutAdapter, seatService);
+    const eventSelectionUseCase = new EventSelectionUseCase(
+      eventApiService,
+      eventContextService,
+      seatLayoutAdapter,
+      seatService
+    );
     const { event, svgElement } = await eventSelectionUseCase.initializeEvent();
 
     await pricingService.init(event.id);
@@ -60,9 +65,8 @@ export class App {
     if (!appRoot) throw new Error('App root not found');
 
     appRoot.innerHTML = `
-<div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8 max-w-7xl mx-auto">
+<div class="flex flex-col lg:flex-row gap-4 lg:gap-8 p-4 lg:p-8">
   <div class="flex-1">
-    <h1 class="mb-4 text-2xl font-bold">Sitzplatzauswahl</h1>
     <seats-map></seats-map>
   </div>
   <div class="w-full lg:w-96">
@@ -76,7 +80,10 @@ export class App {
     if (seatsMapElement) {
       seatsMapElement.init(svgElement);
       seatsMapElement.markBooked(
-        seatService.getAllSeats().filter((s) => s.status !== 'free' && !cartService.hasItem(s.id)).map((s) => s.number),
+        seatService
+          .getAllSeats()
+          .filter((s) => s.status !== 'free' && !cartService.hasItem(s.id))
+          .map((s) => s.number)
       );
     }
 

@@ -813,7 +813,7 @@ draw_row(
 print(f'''
   <g class="stage">
     <rect class="stage-box" y="{17 * 30}" x="{10 * 30}" height="{20 * 30}px" width="{10 * 30}px" fill="white" stroke="black" stroke-width="1px"/>
-    <text class="stage-label" font-size="40px" y="{27 * 30 + 10}" x="{13 * 30 + 10}">Bühne</text>
+    <text class="stage-label" font-size="40px" y="{27 * 30 + 20}" x="{13 * 30}">Bühne</text>
   </g>
 ''')
 

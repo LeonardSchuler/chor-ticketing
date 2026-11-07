@@ -6304,7 +6304,7 @@
 
   <g class="stage">
     <rect class="stage-box" y="510" x="300" height="600px" width="300px" fill="white" stroke="black" stroke-width="1px"/>
-    <text class="stage-label" font-size="40px" y="850" x="370">Bühne</text>
+    <text class="stage-label" font-size="40px" y="830" x="390">Bühne</text>
   </g>
 
   <g class="pillar" transform="translate(300, 510)">

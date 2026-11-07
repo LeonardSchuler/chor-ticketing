@@ -1,9 +1,12 @@
 DB ?= $(or $(TICKETING_DB),data/ticketing.db)
 
-.PHONY: seed clear-reservation list
+.PHONY: seed clear clear-reservation list
 
 seed:
 	uv run python -m app.seed
+
+clear:
+	rm -f "$(DB)" "$(DB)-wal" "$(DB)-shm"
 
 clear-reservation:
 	sqlite3 "$(DB)" "DELETE FROM reservations;"

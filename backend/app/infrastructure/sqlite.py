@@ -1,6 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from collections.abc import Iterator
+from collections.abc import Generator
 from datetime import datetime
 from pathlib import Path
 
@@ -62,13 +62,6 @@ CREATE TABLE IF NOT EXISTS bookings (
 );
 """
 
-# Columns added after the first release; applied to databases created before them.
-BOOKING_MIGRATIONS = {
-    "order_id": "INTEGER REFERENCES orders(id)",
-    "price": "INTEGER",
-    "discount": "REAL",
-}
-
 
 class Database:
     """Opens a short-lived SQLite connection per operation (safe across threads)."""
@@ -77,7 +70,7 @@ class Database:
         self.path = str(path)
 
     @contextmanager
-    def connect(self) -> Iterator[sqlite3.Connection]:
+    def connect(self) -> Generator[sqlite3.Connection]:
         conn = sqlite3.connect(self.path, isolation_level=None)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
@@ -92,10 +85,6 @@ class Database:
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.executescript(SCHEMA)
-            existing = {r["name"] for r in conn.execute("PRAGMA table_info(bookings)")}
-            for column, definition in BOOKING_MIGRATIONS.items():
-                if column not in existing:
-                    conn.execute(f"ALTER TABLE bookings ADD COLUMN {column} {definition}")
 
 
 def insert_bookings(
@@ -200,7 +189,15 @@ class SqliteBookingRepository:
                 " (event_id, seat_id, source, created_at, order_id, price, discount)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [
-                    (event_id, s.seat_id, source, now.isoformat(), order_id, s.price, s.discount)
+                    (
+                        event_id,
+                        s.seat_id,
+                        source,
+                        now.isoformat(),
+                        order_id,
+                        s.price,
+                        s.discount,
+                    )
                     for s in seats
                 ],
             )

@@ -1,18 +1,18 @@
 [
   {
     "id": 1,
-    "title": "Frühjahrskonzert 2026",
-    "date": "2026-05-15",
+    "title": "Mozart hoch drei",
+    "date": "2026-11-08",
     "venue": "St Johann Schaffhausen",
     "seatLayoutUrl": "/seats-layout.svg",
-    "description": "Unser traditionelles Frühjahrskonzert mit Werken von Bach und Händel2",
-    "startTime": "19:30",
-    "endTime": "21:30",
+    "description": "Mozart Krönungsmesse",
+    "startTime": "17:00",
+    "endTime": "18:30",
     "prices": {
-      "1": 55,
-      "2": 65,
-      "3": 45,
-      "4": 75
+      "1": 65,
+      "2": 45,
+      "3": 35,
+      "4": 35
     }
   }
 ]

@@ -2,7 +2,7 @@
 
 Usage: uv run python -m app.seed [path/to/events.json]
 
-Idempotent: events are upserted by (title, date) and their prices replaced, so you can
+Idempotent: events are upserted by their "id" and their prices replaced, so you can
 edit the file and re-run it. Events and prices are overwritten from the file. Bookings listed under an
 event's "bookings" key are additive: missing seats are inserted, nothing is
 ever updated or removed, so real bookings made later survive a re-seed.
@@ -28,9 +28,11 @@ def load(db: Database, path: str | Path = DEFAULT_SEED_FILE) -> int:
             event_id = conn.execute(
                 """
                 INSERT INTO events
-                    (title, date, venue, seat_layout_url, description, start_time, end_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(title, date) DO UPDATE SET
+                    (id, title, date, venue, seat_layout_url, description, start_time, end_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    title = excluded.title,
+                    date = excluded.date,
                     venue = excluded.venue,
                     seat_layout_url = excluded.seat_layout_url,
                     description = excluded.description,
@@ -39,6 +41,7 @@ def load(db: Database, path: str | Path = DEFAULT_SEED_FILE) -> int:
                 RETURNING id
                 """,
                 (
+                    e["id"],
                     e["title"],
                     e["date"],
                     e["venue"],

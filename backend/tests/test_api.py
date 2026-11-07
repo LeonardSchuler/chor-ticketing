@@ -201,25 +201,3 @@ def test_bookings_of_one_purchase_share_an_order(client, tmp_path):
     for r in rows:
         orders.setdefault(r["order_id"], set()).add(r["seat_id"])
     assert sorted(orders.values(), key=min) == [{30, 31}, {32}]
-
-
-def test_init_migrates_existing_bookings_table(tmp_path):
-    import sqlite3
-
-    path = tmp_path / "old.db"
-    conn = sqlite3.connect(path)
-    conn.execute(
-        "CREATE TABLE bookings (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id INTEGER"
-        " NOT NULL, seat_id INTEGER NOT NULL, source TEXT NOT NULL, created_at TEXT"
-        " NOT NULL, UNIQUE (event_id, seat_id))"
-    )
-    conn.execute("INSERT INTO bookings VALUES (1, 1, 366, 'purchase', 'x')")
-    conn.commit()
-    conn.close()
-
-    db = Database(path)
-    db.init()
-    db.init()  # idempotent
-    with db.connect() as conn:
-        row = conn.execute("SELECT * FROM bookings").fetchone()
-    assert row["seat_id"] == 366 and row["order_id"] is None

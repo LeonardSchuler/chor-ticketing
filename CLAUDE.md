@@ -212,6 +212,12 @@ The `backend/` directory holds a FastAPI app managed with **uv**. For the first 
 
 ```bash
 npm run dev:backend               # uvicorn on localhost:8000 (Vite proxies /api to it)
+cd backend && make dev            # same, directly: uv run uvicorn app.main:app --reload
+```
+
+**Serving the frontend from the backend**: if `dist/` exists (created by `npm run build` in the repo root), FastAPI mounts it at `/`, so the whole app is available on `localhost:8000` without Vite. Rebuild after frontend changes; the backend only mounts `dist/` at startup, so restart it if `dist/` was missing when it started.
+
+```bash
 cd backend && uv run pytest       # backend tests
 ```
 

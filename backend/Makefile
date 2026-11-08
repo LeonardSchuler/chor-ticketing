@@ -1,6 +1,9 @@
 DB ?= $(or $(TICKETING_DB),data/ticketing.db)
 
-.PHONY: seed clear clear-reservation list
+.PHONY: dev seed clear clear-reservation list
+
+dev:
+	uv run uvicorn app.main:app --reload
 
 seed:
 	uv run python -m app.seed
